@@ -3,10 +3,9 @@ Microsoft Xamarin API for direct connection to the BlueFire J1939/J1708 Bluetoot
 
 This API requires development under the Xamarin Platform.
 
-Requirements for the API are:
-	<ul><li> The latest version of the Xamarin Forms (see NuGet).</ul>
-	<ul><li> Bluetooth added to the Package Manifest Capabilities.</ul>
-	<ul><li> The BlueFire Data Adapter for Windows 10 (BLE version).</ul>
+Requirements for using the API are:
+	<ul><li> Visual Studio 2015 or greater.</ul>
+	<ul><li> A BlueFire Data Adapter. You can purchase an adapter from Amazon or the BlueFire store.</ul>
 
 To build the demo, follow these steps:
     <ul><li> Ignore and remove Source Control bindings. </ul>
