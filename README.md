@@ -8,6 +8,10 @@ Requirements for the API are:
 	<ul><li> Bluetooth added to the Package Manifest Capabilities.</ul>
 	<ul><li> The BlueFire Data Adapter for Windows 10 (BLE version).</ul>
 
+To build the demo, follow these steps:
+    <ul><li> Ignore and remove Source Control bindings. </ul>
+    <ul><li> Replace missing References (Android, iOS, UWP) with their Library counterparts (BlueFire.Android, BlueFire.iOS, BlueFire.UWP). </ul>
+
 Version 1:<ul>
 	<li>Initial version.
 </ul>
