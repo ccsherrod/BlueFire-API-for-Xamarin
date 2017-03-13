@@ -250,25 +250,4 @@ Global
 		{55EA1ABC-5367-4E8F-B7F2-06C54FC76B9C} = {97DCF828-2F87-463C-AA17-E94F551D8D41}
 		{2082E21D-900C-45B1-B025-2E3F29EA8439} = {97DCF828-2F87-463C-AA17-E94F551D8D41}
 	EndGlobalSection
-	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 6
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = Demo.Android\\Demo.Android.csproj
-		SccLocalPath1 = .
-		SccProjectFilePathRelativizedFromConnection1 = Demo.Android\\
-		SccProjectUniqueName2 = Demo.iOS\\Demo.iOS.csproj
-		SccLocalPath2 = .
-		SccProjectFilePathRelativizedFromConnection2 = Demo.iOS\\
-		SccProjectUniqueName3 = Demo.UWP\\Demo.UWP.csproj
-		SccLocalPath3 = .
-		SccProjectFilePathRelativizedFromConnection3 = Demo.UWP\\
-		SccProjectUniqueName4 = Demo\\Demo.projitems
-		SccProjectTopLevelParentUniqueName4 = Demo\\Demo.shproj
-		SccProjectName4 = \u0022$/BlueFire/Xamarin/Xamarin/API/BlueFire-API-for-Xamarin\u0022
-		SccLocalPath4 = .
-		SccProjectFilePathRelativizedFromConnection4 = Demo\\
-		SccProjectUniqueName5 = Demo\\Demo.shproj
-		SccLocalPath5 = .
-		SccProjectFilePathRelativizedFromConnection5 = Demo\\
-	EndGlobalSection
 EndGlobal
