@@ -14,6 +14,7 @@ UWP/
 API.*
 *.cmd
 
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -22,12 +23,23 @@ API.*
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+bld/
 x64/
 x86/
-bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+
+# BlueFire API Library
+# Note, this must be after the x64/ and x86/ excludes above
+
+Library/*
+!Library/UWP/
+!Library/iOS/
+!Library/Android/
+!Library/UWP/ARM/
+!Library/UWP/x64/
+!Library/UWP/x86/
 
 # Visual Studio 2015 cache/options directory
 .vs/
