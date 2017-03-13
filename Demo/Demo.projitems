@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="SharedProjectFile_SccProperties">
+    <SharedProjectFile_ProjectGuid>{bb0cae82-3c0b-4bd5-b614-19739e22913c}</SharedProjectFile_ProjectGuid>
+    <SharedProjectFile_SccProjectName>"%24/BlueFire/Xamarin/Xamarin/API/BlueFire-API-for-Xamarin/Demo", RVHBAAAA</SharedProjectFile_SccProjectName>
+    <SharedProjectFile_SccAuxPath />
+    <SharedProjectFile_SccLocalPath>.</SharedProjectFile_SccLocalPath>
+    <SharedProjectFile_SccProvider>MSSCCI:Microsoft Visual SourceSafe</SharedProjectFile_SccProvider>
+  </PropertyGroup>
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>65b92991-d034-4e63-b1e7-dba929940814</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Demo</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)MainPage.xaml.cs">
+      <DependentUpon>MainPage.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)MainPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)App.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

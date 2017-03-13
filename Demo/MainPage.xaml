@@ -1,0 +1,208 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:Demo"
+             x:Class="Demo.MainPage">
+    <StackLayout Orientation="Vertical" VerticalOptions="FillAndExpand">
+
+        <StackLayout x:Name="TitleLayout" Orientation="Horizontal" HorizontalOptions="Center">
+            <Label x:Name="Title" FontSize="Medium" FontAttributes="Bold" TextColor="Black" />
+        </StackLayout>
+
+        <BoxView HeightRequest="2" Color="#FF909090" />
+
+        <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
+            <Label Text="Adapter Connection" FontSize="Medium" FontAttributes="Bold" TextColor="Orange" />
+        </StackLayout>
+
+        <!-- Adapter -->
+        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
+            <Label Text="Adapter" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
+            <Label Text="BT2.1" FontSize="Medium" TextColor="Blue" />
+            <Switch x:Name="BT2Switch" />
+            <Label Text="BLE" FontSize="Medium" TextColor="Blue" />
+            <Switch x:Name="BLESwitch" />
+        </StackLayout>
+
+        <!-- Data Bus -->
+        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+            <Label Text="Data Bus" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
+            <Label Text="J1939" FontSize="Medium" TextColor="Blue" />
+            <Switch x:Name="J1939Switch" />
+            <Label Text="J1708" FontSize="Medium" TextColor="Blue" />
+            <Switch x:Name="J1708Switch" />
+        </StackLayout>
+
+        <!-- Status -->
+        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+            <Label Text="Status" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
+            <Label x:Name="StatusText" FontSize="Medium" TextColor="Green" />
+        </StackLayout>
+
+        <!-- Connect Button -->
+        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+            <Button x:Name="ConnectButton" Text="Connect" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="ConnectButton_Clicked" />
+            <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,10,0,0" >
+                <Label x:Name="KeyStateText" Text="Key Off" FontSize="Medium" TextColor="Green" />
+            </StackLayout>
+        </StackLayout>
+
+        <BoxView HeightRequest="2" Color="#FF909090" />
+
+        <ScrollView Orientation="Vertical" VerticalOptions="StartAndExpand" IsClippedToBounds="true">
+            <StackLayout Orientation="Vertical" VerticalOptions="FillAndExpand">
+
+                <!-- Message -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
+                    <Label x:Name="MessageText" FontSize="Medium" TextColor="Red" IsVisible="false" />
+                </StackLayout>
+
+                <!-- Truck Data -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
+                    <Label Text="Truck Data" FontSize="Medium" FontAttributes="Bold" TextColor="Orange" />
+                </StackLayout>
+
+                <!-- Data 1 -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
+                    <Label x:Name="TextView1" FontSize="Medium" TextColor="Blue" WidthRequest="150" />
+                    <Label x:Name="DataView1" FontSize="Medium" TextColor="Green" />
+                </StackLayout>
+
+                <!-- Data 2 -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
+                    <Label x:Name="TextView2" FontSize="Medium" TextColor="Blue" WidthRequest="150" />
+                    <Label x:Name="DataView2" FontSize="Medium" TextColor="Green" />
+                </StackLayout>
+
+                <!-- Data 3 -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
+                    <Label x:Name="TextView3" FontSize="Medium" TextColor="Blue" WidthRequest="150" />
+                    <Label x:Name="DataView3" FontSize="Medium" TextColor="Green" />
+                </StackLayout>
+
+                <!-- Data 4 -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
+                    <Label x:Name="TextView4" FontSize="Medium" TextColor="Blue" WidthRequest="150" />
+                    <Label x:Name="DataView4" FontSize="Medium" TextColor="Green" />
+                </StackLayout>
+
+                <!-- Data 5 -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
+                    <Label x:Name="TextView5" FontSize="Medium" TextColor="Blue" WidthRequest="150" />
+                    <Label x:Name="DataView5" FontSize="Medium" TextColor="Green" />
+                </StackLayout>
+
+                <!-- Data 6 -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
+                    <Label x:Name="TextView6" FontSize="Medium" TextColor="Blue" WidthRequest="150" />
+                    <Label x:Name="DataView6" FontSize="Medium" TextColor="Green" />
+                </StackLayout>
+
+                <!-- Data 7 -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
+                    <Label x:Name="TextView7" FontSize="Medium" TextColor="Blue" WidthRequest="150" />
+                    <Label x:Name="DataView7" FontSize="Medium" TextColor="Green" />
+                </StackLayout>
+
+                <!-- Next Button -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                    <Button x:Name="NextButton" Text="Next Group" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="NextButton_Clicked" />
+                </StackLayout>
+
+                <BoxView HeightRequest="2" Color="#FF909090" />
+
+                <!-- Adapter Faults -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
+                    <Label Text="Adapter Faults" FontSize="Medium" FontAttributes="Bold" TextColor="Orange" />
+                </StackLayout>
+
+                <!-- Fault -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
+                    <Label Text="Fault" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
+                    <Label x:Name="FaultText" FontSize="Medium" TextColor="Green" />
+                </StackLayout>
+
+                <!-- Reset Button -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                    <Button x:Name="ResetButton" Text="Reset" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="ResetButton_Clicked" />
+                </StackLayout>
+
+                <BoxView HeightRequest="2" Color="#FF909090" />
+
+                <!-- Edit Settings -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
+                    <Label x:Name="EditSettingsText" FontSize="Medium" TextColor="Red" IsVisible="false" />
+                </StackLayout>
+
+                <!-- Adapter Settings -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
+                    <Label Text="Adapter Settings" FontSize="Medium" FontAttributes="Bold" TextColor="Orange" />
+                </StackLayout>
+
+                <!-- Led Brightness -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,5,0,0" >
+                    <Label x:Name="LedBrightnessLabel" Text="Led Brightness:" FontSize="Medium" TextColor="Blue" WidthRequest="130" />
+                    <StackLayout x:Name="LedBrightnessLayout" Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-10,0,0" >
+                        <Entry x:Name="LedBrightnessText" FontSize="Medium" TextColor="Green" WidthRequest="50" />
+                    </StackLayout>
+                </StackLayout>
+
+                <!-- User Name -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
+                    <Label x:Name="UserNameLabel" Text="User Name:" FontSize="Medium" TextColor="Blue" WidthRequest="130" />
+                    <StackLayout x:Name="UserNameLayout" Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-10,0,0" >
+                        <Entry x:Name="UserNameText" FontSize="Medium" TextColor="Green" WidthRequest="180" />
+                    </StackLayout>
+                </StackLayout>
+
+                <!-- User Password -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
+                    <Label x:Name="PasswordLabel" Text="Password:" FontSize="Medium" TextColor="Blue" WidthRequest="130" />
+                    <StackLayout x:Name="PasswordLayout" Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-10,0,0" >
+                        <Entry x:Name="PasswordText" FontSize="Medium" TextColor="Green" WidthRequest="180" />
+                    </StackLayout>
+                </StackLayout>
+
+                <!-- Update Button -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                    <Button x:Name="UpdateButton" Text="Update" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="UpdateButton_Clicked" />
+                </StackLayout>
+
+                <BoxView HeightRequest="2" Color="#FF909090" />
+
+                <!-- Edit PGN -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
+                    <Label x:Name="EditPGNText" FontSize="Medium" TextColor="Red" IsVisible="false" />
+                </StackLayout>
+
+                <!-- Proprietary PGNs -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
+                    <Label Text="Proprietary PGNs" FontSize="Medium" FontAttributes="Bold" TextColor="Orange" />
+                </StackLayout>
+
+                <!-- Send PGN -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,5,0,0" >
+                    <Label x:Name="PGNLabel" Text="PGN:" FontSize="Medium" TextColor="Blue" WidthRequest="50" />
+                    <StackLayout x:Name="PGNLayout" Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-10,0,0" >
+                        <Entry x:Name="PGNText" FontSize="Medium" TextColor="Green" WidthRequest="80" />
+                    </StackLayout>
+                </StackLayout>
+
+                <!-- PGN Data -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
+                    <Label x:Name="PGNDataLabel" Text="Data:" FontSize="Medium" TextColor="Blue" WidthRequest="50" />
+                    <StackLayout x:Name="PGNDataLayout" Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-10,0,0" >
+                        <Entry x:Name="PGNDataText" FontSize="Medium" TextColor="Green" WidthRequest="240" />
+                    </StackLayout>
+                </StackLayout>
+
+                <!-- Send Button -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                    <Button x:Name="SendButton" Text="Send" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="SendButton_Clicked" />
+                </StackLayout>
+
+            </StackLayout>
+        </ScrollView>
+    </StackLayout>
+
+</ContentPage>
