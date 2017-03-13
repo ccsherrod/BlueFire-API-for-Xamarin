@@ -8,7 +8,6 @@ Requirements for using the API are:
 	<ul><li> A BlueFire Data Adapter. You can purchase an adapter from Amazon or the BlueFire store.</ul>
 
 To build the demo, follow these steps:
-    <ul><li> Ignore and remove Source Control bindings. </ul>
     <ul><li> Replace missing References (Android, iOS, UWP) with their Library counterparts (BlueFire.Android, BlueFire.iOS, BlueFire.UWP). </ul>
 
 Version 1:<ul>
