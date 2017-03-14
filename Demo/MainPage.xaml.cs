@@ -126,6 +126,9 @@ namespace Demo
             PGNDataText.Text = "";
             SendButton.IsEnabled = false;
 
+            // Show initial key state (key off)
+            ShowKeyState();
+
             // Show Data
             GroupNo = 0;
             NextButton.IsEnabled = false;
@@ -301,7 +304,7 @@ namespace Demo
 
                 case API.ConnectionStates.KeyTurnedOn:
                     ShowKeyState();
-                    GetData();
+                    GetData(); // get data if key is turned on after app is started
                     break;
 
                 case API.ConnectionStates.KeyTurnedOff:
@@ -455,9 +458,6 @@ namespace Demo
 
             ClearEditMessages();
 
-            if (IsKeyOn)
-                GetData();
-
             ShowDisconnectButton();
 
             NextButton.IsEnabled = true;
@@ -465,6 +465,10 @@ namespace Demo
             SendButton.IsEnabled = true;
 
             ConnectButton.Focus();
+
+            // Get data if key is on when app is connecting
+            if (IsKeyOn)
+                GetData();
         }
 
         private void AdapterDisconnected()
@@ -480,6 +484,8 @@ namespace Demo
 
             IsConnected = false;
             IsConnecting = false;
+
+            ShowKeyState(); // key off
 
             ShowConnectButton();
 
