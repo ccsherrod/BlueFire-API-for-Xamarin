@@ -13,4 +13,9 @@ To build the demo, follow these steps:
 Version 1:<ul>
 	<li>Initial version.
 </ul>
+
+Version 1.1:<ul>
+	<li>Changed the Demo App to retrieve truck data more efficiently.
+	<li>Uses the most recent BlueFire code libraries.
+</ul>
 	
