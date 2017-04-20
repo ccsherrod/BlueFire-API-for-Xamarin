@@ -162,12 +162,8 @@ namespace Demo
 #if (!__IOS__)
         protected override Boolean OnBackButtonPressed()
         {
-            // Check for cancelling a connection attempt
-            if (IsConnecting)
-            {
-                CancelConnecting();
-                return true; // Note, returning true without the calling the base will not go back.
-            }
+            // Disconnect the adapter
+            DisconnectAdapter(false);
 
             base.OnBackButtonPressed();
 
@@ -351,12 +347,10 @@ namespace Demo
                     }
                     break;
 
-                case API.ConnectionStates.CommTimeout:
                 case API.ConnectionStates.ConnectTimeout:
                 case API.ConnectionStates.AdapterTimeout:
                     if (IsConnecting || IsConnected)
                     {
-                        await BlueFire.Disconnect();
                         AdapterNotConnected();
                         ShowStatus(State.ToString());
                         ShowMessage("The Adapter Timed Out.");
@@ -370,7 +364,6 @@ namespace Demo
                 case API.ConnectionStates.SystemError:
                     if (IsConnecting || IsConnected)
                     {
-                        await BlueFire.Disconnect();
                         AdapterNotConnected();
                         ShowStatus(State.ToString());
                         ShowError();
@@ -379,14 +372,18 @@ namespace Demo
 
                 case API.ConnectionStates.NotAuthenticated:
                     ShowMessage("Your User Name and Password do not match the Adapter's User Name and Password.");
-                    await BlueFire.Disconnect();
+                    AdapterNotConnected();
+                    ShowStatus(State.ToString());
+                    break;
+
+                case API.ConnectionStates.IncompatibleVersion:
+                    ShowMessage("The Adapter is not compatible with this API.");
                     AdapterNotConnected();
                     ShowStatus(State.ToString());
                     break;
 
                 case API.ConnectionStates.NoAdapter:
                 case API.ConnectionStates.BluetoothNA:
-                case API.ConnectionStates.IncompatibleVersion:
                     AdapterNotConnected();
                     ShowStatus(State.ToString());
                     break;
@@ -547,14 +544,6 @@ namespace Demo
             // Check for API setting the adapter type
             BT2Switch.IsToggled = BlueFire.UseBT2;
             BLESwitch.IsToggled = BlueFire.UseBLE;
-
-            // Check for an incompatible version
-            if (BlueFire.IsVersionIncompatible)
-            {
-                ShowMessage("The Adapter is not compatible with this API.");
-                await DisconnectAdapter();
-                return;
-            }
 
             // Start retrieving initial truck data
             await ShowTruckText();
@@ -876,9 +865,7 @@ namespace Demo
                 await BlueFire.Connect();
             }
             else // Disconnecting
-            {
-                await DisconnectAdapter();
-            }
+                await DisconnectAdapter(true);
         }
 
         private void ShowConnectButton()
@@ -895,50 +882,33 @@ namespace Demo
             ConnectButton.IsEnabled = true;
         }
 
-        private async Task CancelConnecting()
+        private async Task DisconnectAdapter(Boolean WaitForDisconnect)
         {
-            await BlueFire.CancelConnecting();
-
-            AdapterNotConnected();
-        }
-
-        private async Task DisconnectAdapter()
-        {
-            try
+            switch (ConnectionState)
             {
-                switch (ConnectionState)
-                {
-                    case API.ConnectionStates.Initializing:
-                    case API.ConnectionStates.Initialized:
-                    case API.ConnectionStates.Disconnected:
-                    case API.ConnectionStates.NotConnected:
-                    case API.ConnectionStates.NotReconnected:
-                        AdapterNotConnected();
-                        break;
+                // Check for cancelling a connection attempt
+                case API.ConnectionStates.Discovering:
+                case API.ConnectionStates.Connecting:
+                case API.ConnectionStates.Reconnecting:
+                case API.ConnectionStates.Ready:
+                    await BlueFire.CancelConnecting();
+                    break;
 
-                    // Check for cancelling a connection attempt
-                    case API.ConnectionStates.Discovering:
-                    case API.ConnectionStates.Connecting:
-                    case API.ConnectionStates.Reconnecting:
-                    case API.ConnectionStates.Ready:
-                        await CancelConnecting();
-                        break;
+                // Check for already connected
+                case API.ConnectionStates.Connected:
+                case API.ConnectionStates.Reconnected:
+                case API.ConnectionStates.Authenticating:
+                case API.ConnectionStates.Authenticated:
+                case API.ConnectionStates.RetrievingData:
+                case API.ConnectionStates.DataAvailable:
+                    await BlueFire.Disconnect(WaitForDisconnect);
+                    break;
 
-                    case API.ConnectionStates.Connected:
-                    case API.ConnectionStates.Reconnected:
-                    case API.ConnectionStates.Authenticating:
-                    case API.ConnectionStates.Authenticated:
-                    case API.ConnectionStates.RetrievingData:
-                    case API.ConnectionStates.DataAvailable:
-                    case API.ConnectionStates.Disconnecting:
-                        await BlueFire.Disconnect(true);
-                        break;
-
-                    default:
-                        break;
-                }
+                // already disconnecting or not connected
+                default:
+                    AdapterNotConnected();
+                    break;
             }
-            catch (Exception ex) { }
         }
 
     #endregion

@@ -18,4 +18,12 @@ Version 1.1:<ul>
 	<li>Changed the Demo App to retrieve truck data more efficiently.
 	<li>Uses the most recent BlueFire code libraries.
 </ul>
+
+Version 1.2:<ul>
+	<li>Renamed IsVersionIncompatible to IsCompatible and removed the check for it in app's GetData (see below).
+	<li>Moved the incompatible version alert to the app's data event handler's IncompatibleVersion ConnectionState.
+	<li>Updated app's DisconnectAdapter and OnBackButtonPressed.
+	<li>Removed the await BlueFire.Disconnect from the app's data event handler (the API now does this).
+	<li>Added setting the default Minimum Interval of 500ms in the API for Android apps.
+</ul>
 	
