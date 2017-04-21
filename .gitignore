@@ -21,14 +21,25 @@ API.*
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
-[Rr]elease/
 [Rr]eleases/
 bld/
-x64/
 x86/
-[Bb]in/
 [Oo]bj/
 [Ll]og/
+
+# [Rr]elease/
+# ![Rr]elease/Demo.UWP_1.2.2.0_x64.appx
+# x64/
+# !x64/[Rr]elease/Demo.UWP_1.2.2.0_x64.appx
+# [Bb]in/
+bin/
+!Demo.UWP/bin/
+Demo.UWP/bin/*
+!Demo.UWP/bin/*
+Demo.UWP/bin/*/*
+!Demo.UWP/bin/*/Release
+Demo.UWP/bin/*/Release/*
+!Demo.UWP/bin/*/Release/*.appx
 
 # BlueFire API Library
 # Note, this must be after the x64/ and x86/ excludes above
