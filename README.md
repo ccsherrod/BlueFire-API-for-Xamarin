@@ -20,10 +20,12 @@ Version 1.1:<ul>
 </ul>
 
 Version 1.2:<ul>
-	<li>Renamed IsVersionIncompatible to IsCompatible and removed the check for it in app's GetData (see below).
-	<li>Moved the incompatible version alert to the app's data event handler's IncompatibleVersion ConnectionState.
-	<li>Updated app's DisconnectAdapter and OnBackButtonPressed.
-	<li>Removed the await BlueFire.Disconnect from the app's data event handler (the API now does this).
+	<li>Renamed IsVersionIncompatible to IsCompatible and removed the check for it in GetData (see below).
+	<li>Moved the incompatible version alert to the data event handler's IncompatibleVersion ConnectionState.
+	<li>Updated DisconnectAdapter and OnBackButtonPressed.
+	<li>Removed the await BlueFire.Disconnect from the data event handler (the API now does this).
 	<li>Added setting the default Minimum Interval of 500ms in the API for Android apps.
+	<li>Replaced IsKeyOn with BlueFire.IsKeyOn in AdapterConnected.
+	<li>Improved connection and reconnection.
 </ul>
 	

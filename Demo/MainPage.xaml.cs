@@ -23,8 +23,6 @@ namespace Demo
         private Boolean IsConnecting;
         private Boolean IsConnectButton;
 
-        private Boolean IsKeyOn;
-
         private Int32 PGN;
         private Boolean IsSendingPGN;
         private Boolean IsMonitoringPGN;
@@ -147,6 +145,10 @@ namespace Demo
         protected override void OnAppearing()
         {
             base.OnAppearing();
+
+            // Get data if key is on when app is connecting
+            if (BlueFire.IsKeyOn)
+                GetData();
         }
 
         protected override void OnDisappearing()
@@ -286,10 +288,8 @@ namespace Demo
                 case API.ConnectionStates.Connecting:
                     if (BlueFire.IsReconnecting)
                         if (!IsConnecting)
-                        {
                             AdapterReconnecting();
-                            ShowStatus(State.ToString());
-                        }
+                    ShowStatus(State.ToString());
                     break;
 
                 case API.ConnectionStates.Ready:
@@ -310,33 +310,29 @@ namespace Demo
                     break;
 
                 case API.ConnectionStates.Disconnected:
-                    if (IsConnecting || IsConnected)
+                    if ((IsConnecting || IsConnected) && !BlueFire.IsReconnecting)
                         AdapterDisconnected();
                     ShowStatus(State.ToString());
                     break;
 
                 case API.ConnectionStates.Reconnecting:
                     if (!IsConnecting)
-                    {
                         AdapterReconnecting();
-                        ShowStatus(State.ToString());
-                    }
+                    ShowStatus(State.ToString());
                     break;
 
                 case API.ConnectionStates.Reconnected:
                     if (IsConnecting)
                     {
-                        await AdapterReconnected();
+                        AdapterReconnected();
                         ShowStatus(State.ToString());
                     }
                     break;
 
                 case API.ConnectionStates.NotReconnected:
                     if (IsConnecting)
-                    {
                         AdapterNotReconnected();
-                        ShowStatus(State.ToString());
-                    }
+                    ShowStatus(State.ToString());
                     break;
 
                 case API.ConnectionStates.DataAvailable:
@@ -358,16 +354,13 @@ namespace Demo
                     break;
 
                 case API.ConnectionStates.DataError:
-                    ShowError();
+                    LogError();
                     break;
 
                 case API.ConnectionStates.SystemError:
-                    if (IsConnecting || IsConnected)
-                    {
-                        AdapterNotConnected();
-                        ShowStatus(State.ToString());
-                        ShowError();
-                    }
+                    LogError();
+                    AdapterNotConnected();
+                    ShowStatus(State.ToString());
                     break;
 
                 case API.ConnectionStates.NotAuthenticated:
@@ -409,22 +402,6 @@ namespace Demo
             MessageText.IsVisible = true;
         }
 
-        private void ShowError()
-        {
-            ErrorMessage = BlueFire.ErrorMessage;
-            ErrorException = BlueFire.ErrorException;
-
-            if (ErrorException != null)
-                ErrorMessage += @"/r/n" + @"/r/n" + ErrorException.Message;
-
-            if (ErrorMessage == "")
-                return;
-
-            ShowMessage(ErrorMessage);
-
-            ShowConnectButton();
-        }
-
         private void ClearEditMessages()
         {
             MessageText.IsVisible = false;
@@ -432,7 +409,7 @@ namespace Demo
             EditSettingsText.IsVisible = false;
         }
 
-        #endregion
+    #endregion
 
     #region Show Key State
 
@@ -450,7 +427,7 @@ namespace Demo
 
         private async Task AdapterConnected()
         {
-            LogNotifications("Adapter connected.");
+            WriteLog("Adapter connected.");
 
             IsConnected = true;
             IsConnecting = false;
@@ -466,20 +443,20 @@ namespace Demo
             ConnectButton.Focus();
 
             // Get data if key is on when app is connecting
-            if (IsKeyOn)
+            if (BlueFire.IsKeyOn)
                 await GetData();
         }
 
         private void AdapterDisconnected()
         {
-            LogNotifications("Adapter disconnected.");
+            WriteLog("Adapter disconnected.");
 
             AdapterNotConnected();
         }
 
         private void AdapterNotConnected()
         {
-            LogNotifications("Adapter not connected.");
+            WriteLog("Adapter not connected.");
 
             IsConnected = false;
             IsConnecting = false;
@@ -502,7 +479,7 @@ namespace Demo
 
         private void AdapterReconnecting()
         {
-            LogNotifications("Adapter re-connecting.");
+            WriteLog("Adapter re-connecting.");
 
             IsConnected = false;
             IsConnecting = true;
@@ -511,23 +488,21 @@ namespace Demo
             UpdateButton.IsEnabled = false;
             SendButton.IsEnabled = false;
 
-            LogNotifications("App reconnecting to the Adapter. Reason is " + BlueFire.ReconnectReason + ".");
+            WriteLog("App reconnecting to the Adapter. Reason is " + BlueFire.ReconnectReason + ".");
 
             ShowMessage("Lost connection to the Adapter, reconnecting.");
         }
 
-        private async Task AdapterReconnected()
+        private void AdapterReconnected()
         {
-            LogNotifications("Adapter re-connected.");
-
-            await AdapterConnected();
+            WriteLog("Adapter re-connected.");
 
             ShowMessage("Adapter reconnected.");
         }
 
         private void AdapterNotReconnected()
         {
-            LogNotifications("Adapter not re-connected.");
+            WriteLog("Adapter not re-connected.");
 
             AdapterNotConnected();
 
@@ -559,7 +534,7 @@ namespace Demo
             BlueFire.GetFaults(); // Faults
         }
 
-        #endregion
+    #endregion
 
     #region Show Data
 
@@ -816,16 +791,37 @@ namespace Demo
             return Math.Round(Data, Precision).ToString();
         }
 
+        #endregion
+
+    #region Log Error
+
+        private void LogError()
+        {
+            ErrorMessage = BlueFire.ErrorMessage;
+            ErrorException = BlueFire.ErrorException;
+
+            if (ErrorException != null)
+                ErrorMessage += @"/r/n" + @"/r/n" + ErrorException.Message;
+
+            if (ErrorMessage == "")
+                return;
+
+            WriteLog(ErrorMessage);
+        }
+
     #endregion
 
-    #region Log Notification
+    #region Write Log
 
-        private void LogNotifications(String Notification)
+        private void WriteLog(String Message)
         {
+            // Write the message to a log file.
+            // TODO - must implement this in an actual app.
+
 #if (WINDOWS_UWP)
-            Debug.WriteLine(Notification);
+            Debug.WriteLine(Message);
 #else
-            Debug.Print(Notification);
+            Debug.Print(Message);
 #endif
         }
 
@@ -861,6 +857,7 @@ namespace Demo
                 BlueFire.IgnoreJ1708 = !J1708Switch.IsToggled; // is opposite
 
                 //BlueFire.PerformanceMode = true;
+                BlueFire.MaxConnectRetrys = 10; // for testing BT21 connection
 
                 await BlueFire.Connect();
             }
