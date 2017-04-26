@@ -28,9 +28,6 @@ x86/
 [Ll]og/
 
 # [Rr]elease/
-# ![Rr]elease/Demo.UWP_1.2.2.0_x64.appx
-# x64/
-# !x64/[Rr]elease/Demo.UWP_1.2.2.0_x64.appx
 # [Bb]in/
 bin/
 !Demo.UWP/bin/

@@ -18,6 +18,6 @@ using Xamarin.Forms.Xaml;
 [assembly: AssemblyConfiguration("")]
 
 //[assembly: AssemblyVersion("0.0.0")] // must use AssemblyFileVersion for compatibility with Windows UWP
-[assembly: AssemblyFileVersion("1.2.0")] // this needs to match the versionName in the Manifest and the iOS version
+[assembly: AssemblyFileVersion("1.3.0")] // this needs to match the versionName in the Manifest and the iOS version
 
 [assembly: ComVisible(false)]

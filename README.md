@@ -8,7 +8,8 @@ Requirements for using the API are:
 	<ul><li> A BlueFire Data Adapter. You can purchase an adapter from Amazon or the BlueFire store.</ul>
 
 To build the demo, follow these steps:
-    <ul><li> Replace missing References (Android, iOS, UWP) with their Library counterparts (BlueFire.Android, BlueFire.iOS, BlueFire.UWP). </ul>
+    <ul><li> Replace missing References (Android, iOS, UWP) with their Library counterparts (BlueFire.Android, BlueFire.iOS, BlueFire.UWP).
+	<li> For Android apps, ensure you include the BlueFire code that is in the Demo.Android MainActivity.cs. </ul>
 
 Version 1:<ul>
 	<li>Initial version.
@@ -28,4 +29,11 @@ Version 1.2:<ul>
 	<li>Replaced IsKeyOn with BlueFire.IsKeyOn in AdapterConnected.
 	<li>Improved connection and reconnection.
 </ul>
-	
+		
+Version 1.3:<ul>
+	<li>Requires Adapter Firmware Beta 3.10.5.
+	<li>Added getEngineVIN method.
+	<li>Added synchronization to Truck Data methods.
+	<li>Added RetrievalMethod parameter to Truck Data methods.
+	<li>API documentation has been updated to reflect the above changes.
+</ul>

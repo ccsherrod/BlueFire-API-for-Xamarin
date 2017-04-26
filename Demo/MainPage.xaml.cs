@@ -17,6 +17,11 @@ namespace Demo
         private Int32 GroupNo;
         private const Int32 MaxGroupNo = 6;
 
+        private const Boolean Synchronized = true;
+        private const Boolean OnChange = false;
+        private Boolean RetrievalMethod = OnChange; // default
+        private Int32 RetrievalInterval;
+
         private API BlueFire;
 
         private Boolean IsConnected;
@@ -127,11 +132,18 @@ namespace Demo
             // Show initial key state (key off)
             ShowKeyState();
 
+            // Set data retrieval method for testing.
+            // Note, this can be Synchronized or OnChange.
+            //RetrievalMethod = OnChange;
+
+            // Or set the retrieval interval if not using the RetrievalMethod.
+            RetrievalInterval = BlueFire.MinInterval; // or any interval you need
+
             // Show Data
             GroupNo = 0;
             NextButton.IsEnabled = false;
 
-            await ShowTruckText();
+            await GetData();
             ShowData();
 
             // Show connect button
@@ -442,9 +454,13 @@ namespace Demo
 
             ConnectButton.Focus();
 
+            // Check for API setting the adapter type
+            BT2Switch.IsToggled = BlueFire.UseBT2;
+            BLESwitch.IsToggled = BlueFire.UseBLE;
+
             // Get data if key is on when app is connecting
             if (BlueFire.IsKeyOn)
-                await GetData();
+                await GetData(); 
         }
 
         private void AdapterDisconnected()
@@ -511,21 +527,7 @@ namespace Demo
 
     #endregion
 
-    #region Get Data
-
-        // Start retrieving data after connecting to the adapter
-        private async Task GetData()
-        {
-            // Check for API setting the adapter type
-            BT2Switch.IsToggled = BlueFire.UseBT2;
-            BLESwitch.IsToggled = BlueFire.UseBLE;
-
-            // Start retrieving initial truck data
-            await ShowTruckText();
-
-            // Start retrieving truck info
-            BlueFire.GetVehicleData(); // VIN, Make, Model, Serial no
-        }
+    #region Clear Data
 
         private async Task ClearData()
         {
@@ -583,6 +585,169 @@ namespace Demo
             }
         }
 
+        #endregion
+
+    #region Get Data
+
+        private async Task GetData()
+        {
+            // Stop retrieving previous group's adapter data
+            await ClearData();
+
+            DataView1.Text = "NA";
+            DataView2.Text = "NA";
+            DataView3.Text = "NA";
+            DataView4.Text = "NA";
+            DataView5.Text = "NA";
+            DataView6.Text = "NA";
+            DataView7.Text = "NA";
+
+            switch (GroupNo)
+            {
+                case 0:
+                    TextView1.Text = "RPM";
+                    TextView2.Text = "Speed";
+                    TextView3.Text = "Accel Pedal";
+                    TextView4.Text = "Pct Load";
+                    TextView5.Text = "Pct Torque";
+                    TextView6.Text = "Driver Torque";
+                    TextView7.Text = "Torque Mode";
+
+                    if (RetrievalInterval > 0)
+                    {
+                        await BlueFire.GetEngineData1(RetrievalInterval); // RPM, Percent Torque, Driver Torque, Torque Mode
+                        await BlueFire.GetEngineData2(RetrievalInterval); // Percent Load, Accelerator Pedal Position
+                        await BlueFire.GetEngineData3(RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
+                    }
+                    else
+                    {
+                        await BlueFire.GetEngineData1(RetrievalMethod); // RPM, Percent Torque, Driver Torque, Torque Mode
+                        await BlueFire.GetEngineData2(RetrievalMethod); // Percent Load, Accelerator Pedal Position
+                        await BlueFire.GetEngineData3(RetrievalMethod); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
+                    }
+                    break;
+
+                case 1:
+                    TextView1.Text = "Distance";
+                    TextView2.Text = "Odometer";
+                    TextView3.Text = "Total Hours";
+                    TextView4.Text = "Idle Hours";
+                    TextView5.Text = "Brake Pres";
+                    TextView6.Text = "Brake Air";
+                    TextView7.Text = "";
+
+                    if (RetrievalInterval > 0)
+                    {
+                        await BlueFire.GetOdometer(RetrievalInterval); // Odometer (Engine Distance)
+                        await BlueFire.GetBrakeData(RetrievalInterval); // Application Pressure, Primary Pressure, Secondary Pressure
+                        await BlueFire.GetEngineHours(RetrievalInterval); // Total Engine Hours, Total Idle Hours
+                    }
+                    else
+                    {
+                        await BlueFire.GetOdometer(RetrievalMethod); // Odometer (Engine Distance)
+                        await BlueFire.GetBrakeData(RetrievalMethod); // Application Pressure, Primary Pressure, Secondary Pressure
+                        await BlueFire.GetEngineHours(RetrievalMethod); // Total Engine Hours, Total Idle Hours
+                    }
+                    break;
+
+                case 2:
+                    TextView1.Text = "Fuel Rate";
+                    TextView2.Text = "Fuel Used";
+                    TextView3.Text = "HiRes Fuel";
+                    TextView4.Text = "Idle Fuel Used";
+                    TextView5.Text = "Avg Fuel Econ";
+                    TextView6.Text = "Inst Fuel Econ";
+                    TextView7.Text = "Throttle Pos";
+
+                    if (RetrievalInterval > 0)
+                        await BlueFire.GetFuelData(RetrievalInterval); // Fuel Used, Idle Fuel Used, Fuel Rate, Instant Fuel Economy, Avg Fuel Economy, Throttle Position
+                    else
+                        await BlueFire.GetFuelData(RetrievalMethod); // Fuel Used, Idle Fuel Used, Fuel Rate, Instant Fuel Economy, Avg Fuel Economy, Throttle Position
+
+                    break;
+
+                case 3:
+                    TextView1.Text = "Oil Temp";
+                    TextView2.Text = "Oil Pressure";
+                    TextView3.Text = "Intake Temp";
+                    TextView4.Text = "Intake Pres";
+                    TextView5.Text = "Coolant Temp";
+                    TextView6.Text = "Coolant Pres";
+                    TextView7.Text = "Coolant Level";
+
+                    if (RetrievalInterval > 0)
+                    {
+                        await BlueFire.GetPressures(RetrievalInterval); // Oil Pressure, Coolant Pressure, Intake Manifold(Boost) Pressure
+                        await BlueFire.GetTemperatures(RetrievalInterval); // Oil Temp, Coolant Temp, Intake Manifold Temperature
+                        await BlueFire.GetCoolantLevel(RetrievalInterval); // Coolant Level
+                    }
+                    else
+                    {
+                        await BlueFire.GetPressures(RetrievalMethod); // Oil Pressure, Coolant Pressure, Intake Manifold(Boost) Pressure
+                        await BlueFire.GetTemperatures(RetrievalMethod); // Oil Temp, Coolant Temp, Intake Manifold Temperature
+                        await BlueFire.GetCoolantLevel(RetrievalMethod); // Coolant Level
+                    }
+                    break;
+
+                case 4:
+                    TextView1.Text = "Brake Switch";
+                    TextView2.Text = "Clutch Switch";
+                    TextView3.Text = "Park Switch";
+                    TextView4.Text = "Cruise Switch";
+                    TextView5.Text = "Cruise State";
+                    TextView6.Text = "Cruise Speed";
+                    TextView7.Text = "";
+
+                    if (RetrievalInterval > 0)
+                        await BlueFire.GetEngineData3(RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
+                    else
+                        await BlueFire.GetEngineData3(RetrievalMethod); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
+
+                    break;
+
+                case 5:
+                    TextView1.Text = "Max Speed";
+                    TextView2.Text = "HiRes Max";
+                    TextView3.Text = "Current Gear";
+                    TextView4.Text = "Selected Gear";
+                    TextView5.Text = "Battery Volts";
+                    TextView6.Text = "";
+                    TextView7.Text = "";
+
+                    if (RetrievalInterval > 0)
+                    {
+                        await BlueFire.GetEngineData3(RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
+                        await BlueFire.GetBatteryVoltage(RetrievalInterval); // Battery Voltage
+                        await BlueFire.GetTransmissionGears(RetrievalInterval); // Selected and Current Gears
+                    }
+                    else
+                    {
+                        await BlueFire.GetEngineData3(RetrievalMethod); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
+                        await BlueFire.GetBatteryVoltage(RetrievalMethod); // Battery Voltage
+                        await BlueFire.GetTransmissionGears(RetrievalMethod); // Selected and Current Gears
+                    }
+                    break;
+
+                case 6:
+                    TextView1.Text = "VIN";
+                    TextView2.Text = "Make";
+                    TextView3.Text = "Model";
+                    TextView4.Text = "Serial No";
+                    TextView5.Text = "Unit No";
+                    TextView6.Text = "";
+                    TextView7.Text = "";
+
+                    if (RetrievalInterval > 0)
+                        await BlueFire.GetEngineVIN(RetrievalInterval); // VIN
+                    else
+                        await BlueFire.GetEngineVIN(RetrievalMethod); // VIN
+
+                    BlueFire.GetVehicleData(); // VIN, Make, Model, Serial No asynchronously
+
+                    break;
+            }
+        }
+
     #endregion
 
     #region Show Truck Data
@@ -622,16 +787,6 @@ namespace Demo
                     break;
 
                 case 3:
-                    DataView1.Text = FormatSingle(BlueFire.Truck.MaxSpeed, 0);
-                    DataView2.Text = FormatSingle(BlueFire.Truck.HiResMaxSpeed, 0);
-                    //DataView3.Text = FormatInt32(BlueFire.Truck.CurrentGear);
-                    //DataView4.Text = FormatInt32(BlueFire.Truck.SelectedGear);
-                    DataView5.Text = FormatSingle(BlueFire.Truck.BatteryPotential, 2);
-                    DataView6.Text = "";
-                    DataView7.Text = "";
-                    break;
-
-                case 4:
                     DataView1.Text = FormatSingle(BlueFire.Truck.OilTemp, 2);
                     DataView2.Text = FormatSingle(BlueFire.Truck.OilPressure, 2);
                     DataView3.Text = FormatSingle(BlueFire.Truck.IntakeTemp, 2);
@@ -641,13 +796,23 @@ namespace Demo
                     DataView7.Text = FormatSingle(BlueFire.Truck.CoolantLevel, 2);
                     break;
 
-                case 5:
+                case 4:
                     DataView1.Text = BlueFire.Truck.BrakeSwitch.ToString();
                     DataView2.Text = BlueFire.Truck.ClutchSwitch.ToString();
                     DataView3.Text = BlueFire.Truck.ParkBrakeSwitch.ToString();
                     DataView4.Text = BlueFire.Truck.CruiseSwitch.ToString();
                     DataView5.Text = BlueFire.Truck.CruiseState.ToString();
                     DataView6.Text = FormatSingle(BlueFire.Truck.CruiseSpeed, 0);
+                    DataView7.Text = "";
+                    break;
+
+                case 5:
+                    DataView1.Text = FormatSingle(BlueFire.Truck.MaxSpeed, 0);
+                    DataView2.Text = FormatSingle(BlueFire.Truck.HiResMaxSpeed, 0);
+                    //DataView3.Text = FormatInt32(BlueFire.Truck.CurrentGear);
+                    //DataView4.Text = FormatInt32(BlueFire.Truck.SelectedGear);
+                    DataView5.Text = FormatSingle(BlueFire.Truck.BatteryPotential, 2);
+                    DataView6.Text = "";
                     DataView7.Text = "";
                     break;
 
@@ -661,119 +826,6 @@ namespace Demo
                     DataView7.Text = "";
                     break;
             }
-        }
-
-        private async Task ShowTruckText()
-        {
-            switch (GroupNo)
-            {
-                case 0:
-                    await ClearData();
-                    BlueFire.GetEngineData1(); // RPM, Percent Torque, Driver Torque, Torque Mode
-                    BlueFire.GetEngineData2(); // Percent Load, Accelerator Pedal Position
-                    BlueFire.GetEngineData3(); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
-
-                    TextView1.Text = "RPM";
-                    TextView2.Text = "Speed";
-                    TextView3.Text = "Accel Pedal";
-                    TextView4.Text = "Pct Load";
-                    TextView5.Text = "Pct Torque";
-                    TextView6.Text = "Driver Torque";
-                    TextView7.Text = "Torque Mode";
-                    break;
-
-                case 1:
-                    await ClearData();
-                    BlueFire.GetOdometer(); // Odometer (Engine Distance)
-                    BlueFire.GetBrakeData(); // Application Pressure, Primary Pressure, Secondary Pressure
-                    BlueFire.GetEngineHours(); // Total Engine Hours, Total Idle Hours
-
-                    TextView1.Text = "Distance";
-                    TextView2.Text = "Odometer";
-                    TextView3.Text = "Total Hours";
-                    TextView4.Text = "Idle Hours";
-                    TextView5.Text = "Brake Pres";
-                    TextView6.Text = "Brake Air";
-                    TextView7.Text = "";
-                    break;
-
-                case 2:
-                    await ClearData();
-                    BlueFire.GetFuelData(); // Fuel Used, Idle Fuel Used, Fuel Rate, Instant Fuel Economy, Avg Fuel Economy, Throttle Position
-
-                    TextView1.Text = "Fuel Rate";
-                    TextView2.Text = "Fuel Used";
-                    TextView3.Text = "HiRes Fuel";
-                    TextView4.Text = "Idle Fuel Used";
-                    TextView5.Text = "Avg Fuel Econ";
-                    TextView6.Text = "Inst Fuel Econ";
-                    TextView7.Text = "Throttle Pos";
-                    break;
-
-                case 3:
-                    await ClearData();
-                    BlueFire.GetEngineData3(); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
-                    BlueFire.GetBatteryVoltage(); // Battery Voltage
-                    BlueFire.GetTransmissionGears(); // Selected and Current Gears
-
-                    TextView1.Text = "Max Speed";
-                    TextView2.Text = "HiRes Max";
-                    TextView3.Text = "Current Gear";
-                    TextView4.Text = "Selected Gear";
-                    TextView5.Text = "Battery Volts";
-                    TextView6.Text = "";
-                    TextView7.Text = "";
-
-                    break;
-
-                case 4:
-                    await ClearData();
-                    BlueFire.GetPressures(); // Oil Pressure, Coolant Pressure, Intake Manifold(Boost) Pressure
-                    BlueFire.GetTemperatures(); // Oil Temp, Coolant Temp, Intake Manifold Temperature
-                    BlueFire.GetCoolantLevel(); // Coolant Level
-
-                    TextView1.Text = "Oil Temp";
-                    TextView2.Text = "Oil Pressure";
-                    TextView3.Text = "Intake Temp";
-                    TextView4.Text = "Intake Pres";
-                    TextView5.Text = "Coolant Temp";
-                    TextView6.Text = "Coolant Pres";
-                    TextView7.Text = "Coolant Level";
-                    break;
-
-                case 5:
-                    await ClearData();
-                    BlueFire.GetEngineData3(); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
-
-                    TextView1.Text = "Brake Switch";
-                    TextView2.Text = "Clutch Switch";
-                    TextView3.Text = "Park Switch";
-                    TextView4.Text = "Cruise Switch";
-                    TextView5.Text = "Cruise State";
-                    TextView6.Text = "Cruise Speed";
-                    TextView7.Text = "";
-                    break;
-
-                case 6:
-                    await ClearData();
-                    BlueFire.GetVehicleData(); // VIN, Make, Model, Serial no
-
-                    TextView1.Text = "VIN";
-                    TextView2.Text = "Make";
-                    TextView3.Text = "Model";
-                    TextView4.Text = "Serial No";
-                    TextView5.Text = "Unit No";
-                    TextView6.Text ="";
-                    TextView7.Text ="";
-                    break;
-            }
-            DataView1.Text = "NA";
-            DataView2.Text = "NA";
-            DataView3.Text = "NA";
-            DataView4.Text = "NA";
-            DataView5.Text = "NA";
-            DataView6.Text = "NA";
-            DataView7.Text = "NA";
         }
 
         private String FormatInt32(Int32 Data)
@@ -791,7 +843,7 @@ namespace Demo
             return Math.Round(Data, Precision).ToString();
         }
 
-        #endregion
+    #endregion
 
     #region Log Error
 
@@ -919,7 +971,7 @@ namespace Demo
             if (GroupNo > MaxGroupNo)
                 GroupNo = 0;
 
-            await ShowTruckText();
+            await GetData();
         }
 
     #endregion
