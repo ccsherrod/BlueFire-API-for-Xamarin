@@ -26,7 +26,7 @@
     </SccAuxPath>
     <SccProvider>
     </SccProvider>
-    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>x86|x64|arm</AppxBundlePlatforms>
     <PackageCertificateThumbprint>85F286D1AD1DC4C1E055D3CAD2D970DD2644D565</PackageCertificateThumbprint>
