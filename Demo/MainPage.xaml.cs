@@ -17,9 +17,7 @@ namespace Demo
         private Int32 GroupNo;
         private const Int32 MaxGroupNo = 6;
 
-        private const Boolean Synchronized = true;
-        private const Boolean OnChange = false;
-        private Boolean RetrievalMethod = OnChange; // default
+        private RetrievalMethods RetrievalMethod; 
         private Int32 RetrievalInterval;
 
         private API BlueFire;
@@ -39,7 +37,7 @@ namespace Demo
         private String ErrorMessage = "";
         private Exception ErrorException = null;
 
-        private API.ConnectionStates ConnectionState = API.ConnectionStates.NotConnected;
+        private ConnectionStates ConnectionState = ConnectionStates.NotConnected;
 
         private event API.EventHandler APIDataHandlerEvent;
 
@@ -107,10 +105,23 @@ namespace Demo
             // Clear messages and status
             ClearEditMessages();
 
-            ShowStatus(API.ConnectionStates.NotConnected.ToString());
+            ShowStatus(ConnectionStates.NotConnected.ToString());
 
             // Initialize BlueFire API
             await BlueFire.Initialize();
+
+            // Clear adapter id filter
+            BlueFire.AdapterIdFilter.Clear();
+
+            // Set initial Bluetooth discovery timeout.
+            // Note, this will be adjusted by the API after a connection is made.
+            BlueFire.DiscoveryTimeout = 30;
+
+            // Instruct the API not to do any reconnections
+            //BlueFire.MaxReconnectAttempts = 0;
+
+            // Set performance mode if need to
+            //BlueFire.PerformanceMode = true;
 
             // Set BlueFire settings
             BT2Switch.IsToggled = BlueFire.UseBT2;
@@ -133,11 +144,12 @@ namespace Demo
             ShowKeyState();
 
             // Set data retrieval method for testing.
-            // Note, this can be Synchronized or OnChange.
-            //RetrievalMethod = OnChange;
+            //RetrievalMethod = RetrievalMethods.OnChange;
+            RetrievalMethod = RetrievalMethods.OnInterval;
+            //RetrievalMethod = RetrievalMethods.Synchronized;
 
-            // Or set the retrieval interval if not using the RetrievalMethod.
-            RetrievalInterval = BlueFire.MinInterval; // or any interval you need
+            // Or set the retrieval interval if using OnInterval.
+            //RetrievalInterval = 1000; // default is BlueFire.MinInterval
 
             // Show Data
             GroupNo = 0;
@@ -202,17 +214,17 @@ namespace Demo
 
     #region App Event Handler
 
-        internal async void AppEventHandler(API.AppEventIds EventId)
+        internal async void AppEventHandler(AppEventIds EventId)
         {
             switch (EventId)
             {
                 // Check for app becoming inactive (iOS).
                 // Note, when Bluetooth is connecting, the app will be set inactive.
-                case API.AppEventIds.IsInactive:
+                case AppEventIds.IsInactive:
                     break;
 
                 // Check for app going to the background
-                case API.AppEventIds.IsBackground:
+                case AppEventIds.IsBackground:
 
                     OnDisappearing();  // this will invoke Page Event OnDisappearing
 
@@ -220,19 +232,22 @@ namespace Demo
                     // Note, this will remove all app data retrieval.
                     if (!await BlueFire.SendToBackground())
                         return; // app is ending
+                    
+                    if (IsConnected)
+                    {
+                        // Re-retrieve data if on external power
+                        if (BlueFire.IsDevicePowered)
+                            await GetData();
 
-                    // Re-retrieve data if on external power
-                    if (BlueFire.IsDevicePowered)
-                        await GetData();
-
-                    // Not on external power, disconnect the adapter
-                    else if (IsConnected)
-                        await BlueFire.Disconnect();
+                        // Not on external power, disconnect the adapter
+                        else
+                            await BlueFire.Disconnect();
+                    }
 
                     break;
 
                 // Check for app is coming back to the foreground
-                case API.AppEventIds.IsForeground:
+                case AppEventIds.IsForeground:
 
                     // Restore the app to the foreground.
                     // Note, this will remove all app data retrieval.
@@ -249,7 +264,7 @@ namespace Demo
                 // Check for app being terminated.
                 // Note, iOS will terminate the app during the execution of any code here so
                 // there is no sense in putting any code here.
-                case API.AppEventIds.IsTerminating:
+                case AppEventIds.IsTerminating:
 
                     if (!await BlueFire.TerminateApp())
                         return;
@@ -266,30 +281,30 @@ namespace Demo
 
     #region Data Event Handler
 
-        private void DataEventHandler(API.ConnectionStates State)
+        private void DataEventHandler(ConnectionStates State)
         {
             // Run on the UI thread
             Xamarin.Forms.Device.BeginInvokeOnMainThread(async() => await DataDataHandlerUI(State));
         }
 
-        private async Task DataDataHandlerUI(API.ConnectionStates State)
+        private async Task DataDataHandlerUI(ConnectionStates State)
         {
             ConnectionState = State;
 
             switch (ConnectionState)
             {
-                case API.ConnectionStates.Initializing:
-                case API.ConnectionStates.Initialized:
-                case API.ConnectionStates.Discovering:
-                case API.ConnectionStates.Connected:
-                case API.ConnectionStates.Authenticating:
-                case API.ConnectionStates.Authenticated:
-                case API.ConnectionStates.RetrievingData:
-                case API.ConnectionStates.Disconnecting:
+                case ConnectionStates.Initializing:
+                case ConnectionStates.Initialized:
+                case ConnectionStates.Discovering:
+                case ConnectionStates.Connected:
+                case ConnectionStates.Authenticating:
+                case ConnectionStates.Authenticated:
+                case ConnectionStates.RetrievingData:
+                case ConnectionStates.Disconnecting:
                     ShowStatus(State.ToString());
                     break;
 
-                case API.ConnectionStates.NotConnected:
+                case ConnectionStates.NotConnected:
                     if (IsConnecting || IsConnected)
                     {
                         AdapterNotConnected();
@@ -297,14 +312,14 @@ namespace Demo
                     }
                     break;
 
-                case API.ConnectionStates.Connecting:
+                case ConnectionStates.Connecting:
                     if (BlueFire.IsReconnecting)
                         if (!IsConnecting)
                             AdapterReconnecting();
                     ShowStatus(State.ToString());
                     break;
 
-                case API.ConnectionStates.Ready:
+                case ConnectionStates.Ready:
                     if (!IsConnected)
                     {
                         await AdapterConnected();
@@ -312,28 +327,28 @@ namespace Demo
                     }
                     break;
 
-                case API.ConnectionStates.KeyTurnedOn:
+                case ConnectionStates.KeyTurnedOn:
                     ShowKeyState();
                     await GetData(); // get data if key is turned on after app is started
                     break;
 
-                case API.ConnectionStates.KeyTurnedOff:
+                case ConnectionStates.KeyTurnedOff:
                     ShowKeyState();
                     break;
 
-                case API.ConnectionStates.Disconnected:
+                case ConnectionStates.Disconnected:
                     if ((IsConnecting || IsConnected) && !BlueFire.IsReconnecting)
                         AdapterDisconnected();
                     ShowStatus(State.ToString());
                     break;
 
-                case API.ConnectionStates.Reconnecting:
+                case ConnectionStates.Reconnecting:
                     if (!IsConnecting)
                         AdapterReconnecting();
                     ShowStatus(State.ToString());
                     break;
 
-                case API.ConnectionStates.Reconnected:
+                case ConnectionStates.Reconnected:
                     if (IsConnecting)
                     {
                         AdapterReconnected();
@@ -341,13 +356,13 @@ namespace Demo
                     }
                     break;
 
-                case API.ConnectionStates.NotReconnected:
+                case ConnectionStates.NotReconnected:
                     if (IsConnecting)
                         AdapterNotReconnected();
                     ShowStatus(State.ToString());
                     break;
 
-                case API.ConnectionStates.DataAvailable:
+                case ConnectionStates.DataAvailable:
                     if (IsConnected)
                     {
                         ShowData();
@@ -355,8 +370,13 @@ namespace Demo
                     }
                     break;
 
-                case API.ConnectionStates.ConnectTimeout:
-                case API.ConnectionStates.AdapterTimeout:
+                case ConnectionStates.CANFilterFull:
+                    ShowMessage("The CAN Filter is Full. Some data will not be retrieved.");
+                    ShowStatus(State.ToString());
+                    break;
+
+                case ConnectionStates.ConnectTimeout:
+                case ConnectionStates.AdapterTimeout:
                     if (IsConnecting || IsConnected)
                     {
                         AdapterNotConnected();
@@ -365,30 +385,36 @@ namespace Demo
                     }
                     break;
 
-                case API.ConnectionStates.DataError:
+                case ConnectionStates.DataError:
                     LogError();
                     break;
 
-                case API.ConnectionStates.SystemError:
+                case ConnectionStates.SystemError:
                     LogError();
                     AdapterNotConnected();
                     ShowStatus(State.ToString());
                     break;
 
-                case API.ConnectionStates.NotAuthenticated:
-                    ShowMessage("Your User Name and Password do not match the Adapter's User Name and Password.");
+                case ConnectionStates.NotAuthenticated:
+                    ShowMessage("You are not authorized to access this adapter. Check your adapter security settings.");
                     AdapterNotConnected();
                     ShowStatus(State.ToString());
                     break;
 
-                case API.ConnectionStates.IncompatibleVersion:
+                case ConnectionStates.NotFound:
+                    ShowMessage("A valid adapter was not found. Check your adapter connection settings.");
+                    AdapterNotConnected();
+                    ShowStatus(State.ToString());
+                    break;
+
+                case ConnectionStates.IncompatibleVersion:
                     ShowMessage("The Adapter is not compatible with this API.");
                     AdapterNotConnected();
                     ShowStatus(State.ToString());
                     break;
 
-                case API.ConnectionStates.NoAdapter:
-                case API.ConnectionStates.BluetoothNA:
+                case ConnectionStates.NoAdapter:
+                case ConnectionStates.BluetoothNA:
                     AdapterNotConnected();
                     ShowStatus(State.ToString());
                     break;
@@ -457,6 +483,12 @@ namespace Demo
             // Check for API setting the adapter type
             BT2Switch.IsToggled = BlueFire.UseBT2;
             BLESwitch.IsToggled = BlueFire.UseBLE;
+
+            // Test adapter id filter.
+            // Note, this will allow the intial connection to a single adapter
+            // but then not any more connection attempts until the app is restarted
+            // because the filter is cleared when the app is started.
+            //BlueFire.AdapterIdFilter.Add(BlueFire.AdapterId);
 
             // Get data if key is on when app is connecting
             if (BlueFire.IsKeyOn)
@@ -527,17 +559,6 @@ namespace Demo
 
     #endregion
 
-    #region Clear Data
-
-        private async Task ClearData()
-        {
-            await BlueFire.ClearData();
-
-            BlueFire.GetFaults(); // Faults
-        }
-
-    #endregion
-
     #region Show Data
 
         private void ShowData()
@@ -592,7 +613,7 @@ namespace Demo
         private async Task GetData()
         {
             // Stop retrieving previous group's adapter data
-            await ClearData();
+            await BlueFire.ClearData();
 
             DataView1.Text = "NA";
             DataView2.Text = "NA";
@@ -601,6 +622,18 @@ namespace Demo
             DataView5.Text = "NA";
             DataView6.Text = "NA";
             DataView7.Text = "NA";
+
+            FaultLayout.IsVisible = false;
+
+            // Set the retrieval method and interval.
+            // Note, this is here for demo-ing the different methods.
+            //RetrievalMethod = RetrievalMethods.OnChange; // default
+
+            RetrievalMethod = RetrievalMethods.OnInterval;
+            //RetrievalInterval = 5000; // default is MinInterval, only required if RetrievalMethod is OnInterval
+
+            //RetrievalMethod = RetrievalMethods.Synchronized;
+            //BlueFire.SyncTimeout = 2000; // default is 1000, only required if RetrievalMethod is Synchronized
 
             switch (GroupNo)
             {
@@ -613,18 +646,14 @@ namespace Demo
                     TextView6.Text = "Driver Torque";
                     TextView7.Text = "Torque Mode";
 
-                    if (RetrievalInterval > 0)
-                    {
-                        await BlueFire.GetEngineData1(RetrievalInterval); // RPM, Percent Torque, Driver Torque, Torque Mode
-                        await BlueFire.GetEngineData2(RetrievalInterval); // Percent Load, Accelerator Pedal Position
-                        await BlueFire.GetEngineData3(RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
-                    }
-                    else
-                    {
-                        await BlueFire.GetEngineData1(RetrievalMethod); // RPM, Percent Torque, Driver Torque, Torque Mode
-                        await BlueFire.GetEngineData2(RetrievalMethod); // Percent Load, Accelerator Pedal Position
-                        await BlueFire.GetEngineData3(RetrievalMethod); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
-                    }
+                    //await BlueFire.GetEngineData1(); // default RetrievalMethods.OnChange
+                    //await BlueFire.GetEngineData1(RetrievalMethods.OnInterval); // default Interval = MinInterval
+                    //await BlueFire.GetEngineData1(RetrievalMethods.Synchronized); // blocks until data is retrieved
+
+                    await BlueFire.GetEngineData1(RetrievalMethod, RetrievalInterval); // RPM, Percent Torque, Driver Torque, Torque Mode
+                    await BlueFire.GetEngineData2(RetrievalMethod, RetrievalInterval); // Percent Load, Accelerator Pedal Position
+                    await BlueFire.GetEngineData3(RetrievalMethod, RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
+
                     break;
 
                 case 1:
@@ -636,18 +665,10 @@ namespace Demo
                     TextView6.Text = "Brake Air";
                     TextView7.Text = "";
 
-                    if (RetrievalInterval > 0)
-                    {
-                        await BlueFire.GetOdometer(RetrievalInterval); // Odometer (Engine Distance)
-                        await BlueFire.GetBrakeData(RetrievalInterval); // Application Pressure, Primary Pressure, Secondary Pressure
-                        await BlueFire.GetEngineHours(RetrievalInterval); // Total Engine Hours, Total Idle Hours
-                    }
-                    else
-                    {
-                        await BlueFire.GetOdometer(RetrievalMethod); // Odometer (Engine Distance)
-                        await BlueFire.GetBrakeData(RetrievalMethod); // Application Pressure, Primary Pressure, Secondary Pressure
-                        await BlueFire.GetEngineHours(RetrievalMethod); // Total Engine Hours, Total Idle Hours
-                    }
+                    await BlueFire.GetOdometer(RetrievalMethod, RetrievalInterval); // Odometer (Engine Distance)
+                    await BlueFire.GetBrakeData(RetrievalMethod, RetrievalInterval); // Application Pressure, Primary Pressure, Secondary Pressure
+                    await BlueFire.GetEngineHours(RetrievalMethod, RetrievalInterval); // Total Engine Hours, Total Idle Hours
+
                     break;
 
                 case 2:
@@ -659,10 +680,7 @@ namespace Demo
                     TextView6.Text = "Inst Fuel Econ";
                     TextView7.Text = "Throttle Pos";
 
-                    if (RetrievalInterval > 0)
-                        await BlueFire.GetFuelData(RetrievalInterval); // Fuel Used, Idle Fuel Used, Fuel Rate, Instant Fuel Economy, Avg Fuel Economy, Throttle Position
-                    else
-                        await BlueFire.GetFuelData(RetrievalMethod); // Fuel Used, Idle Fuel Used, Fuel Rate, Instant Fuel Economy, Avg Fuel Economy, Throttle Position
+                    await BlueFire.GetFuelData(RetrievalMethod, RetrievalInterval); // Fuel Used, Idle Fuel Used, Fuel Rate, Instant Fuel Economy, Avg Fuel Economy, Throttle Position
 
                     break;
 
@@ -675,18 +693,10 @@ namespace Demo
                     TextView6.Text = "Coolant Pres";
                     TextView7.Text = "Coolant Level";
 
-                    if (RetrievalInterval > 0)
-                    {
-                        await BlueFire.GetPressures(RetrievalInterval); // Oil Pressure, Coolant Pressure, Intake Manifold(Boost) Pressure
-                        await BlueFire.GetTemperatures(RetrievalInterval); // Oil Temp, Coolant Temp, Intake Manifold Temperature
-                        await BlueFire.GetCoolantLevel(RetrievalInterval); // Coolant Level
-                    }
-                    else
-                    {
-                        await BlueFire.GetPressures(RetrievalMethod); // Oil Pressure, Coolant Pressure, Intake Manifold(Boost) Pressure
-                        await BlueFire.GetTemperatures(RetrievalMethod); // Oil Temp, Coolant Temp, Intake Manifold Temperature
-                        await BlueFire.GetCoolantLevel(RetrievalMethod); // Coolant Level
-                    }
+                    await BlueFire.GetPressures(RetrievalMethod, RetrievalInterval); // Oil Pressure, Coolant Pressure, Intake Manifold(Boost) Pressure
+                    await BlueFire.GetTemperatures(RetrievalMethod, RetrievalInterval); // Oil Temp, Coolant Temp, Intake Manifold Temperature
+                    await BlueFire.GetCoolantLevel(RetrievalMethod, RetrievalInterval); // Coolant Level
+
                     break;
 
                 case 4:
@@ -698,10 +708,7 @@ namespace Demo
                     TextView6.Text = "Cruise Speed";
                     TextView7.Text = "";
 
-                    if (RetrievalInterval > 0)
-                        await BlueFire.GetEngineData3(RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
-                    else
-                        await BlueFire.GetEngineData3(RetrievalMethod); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
+                    await BlueFire.GetEngineData3(RetrievalMethod, RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
 
                     break;
 
@@ -714,18 +721,10 @@ namespace Demo
                     TextView6.Text = "";
                     TextView7.Text = "";
 
-                    if (RetrievalInterval > 0)
-                    {
-                        await BlueFire.GetEngineData3(RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
-                        await BlueFire.GetBatteryVoltage(RetrievalInterval); // Battery Voltage
-                        await BlueFire.GetTransmissionGears(RetrievalInterval); // Selected and Current Gears
-                    }
-                    else
-                    {
-                        await BlueFire.GetEngineData3(RetrievalMethod); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
-                        await BlueFire.GetBatteryVoltage(RetrievalMethod); // Battery Voltage
-                        await BlueFire.GetTransmissionGears(RetrievalMethod); // Selected and Current Gears
-                    }
+                    await BlueFire.GetEngineData3(RetrievalMethod, RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
+                    await BlueFire.GetBatteryVoltage(RetrievalMethod, RetrievalInterval); // Battery Voltage
+                    await BlueFire.GetTransmissionGears(RetrievalMethod, RetrievalInterval); // Selected and Current Gears
+
                     break;
 
                 case 6:
@@ -737,12 +736,13 @@ namespace Demo
                     TextView6.Text = "";
                     TextView7.Text = "";
 
-                    if (RetrievalInterval > 0)
-                        await BlueFire.GetEngineVIN(RetrievalInterval); // VIN
-                    else
-                        await BlueFire.GetEngineVIN(RetrievalMethod); // VIN
+                    await BlueFire.GetEngineVIN(RetrievalMethod, RetrievalInterval); // VIN
 
-                    BlueFire.GetVehicleData(); // VIN, Make, Model, Serial No asynchronously
+                    BlueFire.GetVehicleInfo(); // Make, Model, Serial No asynchronously
+
+                    // Faults
+                    FaultLayout.IsVisible = true;
+                    BlueFire.GetFaults();
 
                     break;
             }
@@ -877,7 +877,7 @@ namespace Demo
 #endif
         }
 
-    #endregion
+        #endregion
 
     #region Connect Button
 
@@ -908,13 +908,15 @@ namespace Demo
                 BlueFire.IgnoreJ1939 = !J1939Switch.IsToggled; // is opposite
                 BlueFire.IgnoreJ1708 = !J1708Switch.IsToggled; // is opposite
 
-                //BlueFire.PerformanceMode = true;
-                BlueFire.MaxConnectRetrys = 10; // for testing BT21 connection
+                Boolean Synchronized = true; // test synchronized connection
+                //BlueFire.ConnectTimeout = 2000; // default is 1000 (one second)
 
-                await BlueFire.Connect();
+                await BlueFire.Connect(Synchronized);
             }
             else // Disconnecting
+            {
                 await DisconnectAdapter(true);
+            }
         }
 
         private void ShowConnectButton()
@@ -936,20 +938,20 @@ namespace Demo
             switch (ConnectionState)
             {
                 // Check for cancelling a connection attempt
-                case API.ConnectionStates.Discovering:
-                case API.ConnectionStates.Connecting:
-                case API.ConnectionStates.Reconnecting:
-                case API.ConnectionStates.Ready:
+                case ConnectionStates.Discovering:
+                case ConnectionStates.Connecting:
+                case ConnectionStates.Reconnecting:
+                case ConnectionStates.Ready:
                     await BlueFire.CancelConnecting();
                     break;
 
                 // Check for already connected
-                case API.ConnectionStates.Connected:
-                case API.ConnectionStates.Reconnected:
-                case API.ConnectionStates.Authenticating:
-                case API.ConnectionStates.Authenticated:
-                case API.ConnectionStates.RetrievingData:
-                case API.ConnectionStates.DataAvailable:
+                case ConnectionStates.Connected:
+                case ConnectionStates.Reconnected:
+                case ConnectionStates.Authenticating:
+                case ConnectionStates.Authenticated:
+                case ConnectionStates.RetrievingData:
+                case ConnectionStates.DataAvailable:
                     await BlueFire.Disconnect(WaitForDisconnect);
                     break;
 

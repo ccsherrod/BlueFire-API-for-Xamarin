@@ -21,9 +21,16 @@ namespace Demo.Droid
 
             base.OnCreate (bundle);
 
-            // REQUIRED FOR BLUEFIRE API
+            // ****************************************************************************
+            // **********************  REQUIRED FOR BLUEFIRE API  *************************
+            //
+            // Also, ensure that the Demo.Android project properties Android Options/Linker 
+            // Additional supported encodings West is checked.
+            //
             API.Activity = this;
             API.Context = this.ApplicationContext;
+
+            // ****************************************************************************
 
             global::Xamarin.Forms.Forms.Init (this, bundle);
 			LoadApplication (new Demo.App ());
@@ -35,7 +42,7 @@ namespace Demo.Droid
 
             API.IsActive = true;
 
-            API.RaiseAppEvent(API.AppEventIds.IsActive);
+            API.RaiseAppEvent(AppEventIds.IsActive);
         }
 
         protected override void OnStop()
@@ -44,7 +51,7 @@ namespace Demo.Droid
 
             API.IsBackground = true;
 
-            API.RaiseAppEvent(API.AppEventIds.IsBackground);
+            API.RaiseAppEvent(AppEventIds.IsBackground);
         }
 
         protected override void OnResume()
@@ -53,7 +60,7 @@ namespace Demo.Droid
 
             API.IsBackground = false;
 
-            API.RaiseAppEvent(API.AppEventIds.IsForeground);
+            API.RaiseAppEvent(AppEventIds.IsForeground);
         }
 
         // not guaranteed that this will run
@@ -63,7 +70,7 @@ namespace Demo.Droid
 
             API.IsTerminating = true;
 
-            API.RaiseAppEvent(API.AppEventIds.IsTerminating);
+            API.RaiseAppEvent(AppEventIds.IsTerminating);
         }
     }
 }

@@ -114,14 +114,14 @@ namespace Demo.UWP
         {
             API.IsBackground = true;
 
-            API.RaiseAppEvent(API.AppEventIds.IsBackground);
+            API.RaiseAppEvent(AppEventIds.IsBackground);
         }
 
         private void OnLeavingBackground(object sender, LeavingBackgroundEventArgs e)
         {
             API.IsBackground = false;
 
-            API.RaiseAppEvent(API.AppEventIds.IsForeground);
+            API.RaiseAppEvent(AppEventIds.IsForeground);
         }
 
         private void OnResuming(object sender, object e)
@@ -134,7 +134,7 @@ namespace Demo.UWP
 
             API.IsTerminating = true;
 
-            API.RaiseAppEvent(API.AppEventIds.IsTerminating);
+            API.RaiseAppEvent(AppEventIds.IsTerminating);
 
             await WaitForAppToEnd();
 

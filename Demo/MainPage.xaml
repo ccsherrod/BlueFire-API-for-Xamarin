@@ -105,29 +105,33 @@
                 </StackLayout>
 
                 <!-- Next Button -->
-                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                <StackLayout  Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
                     <Button x:Name="NextButton" Text="Next Group" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="NextButton_Clicked" />
                 </StackLayout>
 
                 <BoxView HeightRequest="2" Color="#FF909090" />
 
-                <!-- Adapter Faults -->
-                <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
-                    <Label Text="Adapter Faults" FontSize="Medium" FontAttributes="Bold" TextColor="Orange" />
-                </StackLayout>
+                <StackLayout x:Name="FaultLayout" Orientation="Vertical" VerticalOptions="FillAndExpand">
 
-                <!-- Fault -->
-                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
-                    <Label Text="Fault" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
-                    <Label x:Name="FaultText" FontSize="Medium" TextColor="Green" />
-                </StackLayout>
+                    <!-- Adapter Faults -->
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
+                        <Label Text="Adapter Faults" FontSize="Medium" FontAttributes="Bold" TextColor="Orange" />
+                    </StackLayout>
 
-                <!-- Reset Button -->
-                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
-                    <Button x:Name="ResetButton" Text="Reset" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="ResetButton_Clicked" />
-                </StackLayout>
+                    <!-- Fault -->
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
+                        <Label Text="Fault" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
+                        <Label x:Name="FaultText" FontSize="Medium" TextColor="Green" />
+                    </StackLayout>
 
-                <BoxView HeightRequest="2" Color="#FF909090" />
+                    <!-- Reset Button -->
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                        <Button x:Name="ResetButton" Text="Reset" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="ResetButton_Clicked" />
+                    </StackLayout>
+
+                    <BoxView HeightRequest="2" Color="#FF909090" />
+
+                </StackLayout>
 
                 <!-- Edit Settings -->
                 <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >

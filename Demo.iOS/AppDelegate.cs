@@ -37,28 +37,28 @@ namespace Demo.iOS
         {
             API.IsActive = true;
 
-            API.RaiseAppEvent(API.AppEventIds.IsActive);
+            API.RaiseAppEvent(AppEventIds.IsActive);
         }
 
         public override void WillEnterForeground(UIApplication application)
         {
             API.IsBackground = false;
 
-            API.RaiseAppEvent(API.AppEventIds.IsForeground);
+            API.RaiseAppEvent(AppEventIds.IsForeground);
         }
 
         public override void OnResignActivation(UIApplication application)
         {
             API.IsActive = false;
 
-            API.RaiseAppEvent(API.AppEventIds.IsInactive);
+            API.RaiseAppEvent(AppEventIds.IsInactive);
         }
 
         public override void DidEnterBackground(UIApplication application)
         {
             API.IsBackground = true;
 
-            API.RaiseAppEvent(API.AppEventIds.IsBackground);
+            API.RaiseAppEvent(AppEventIds.IsBackground);
         }
 
         // not guaranteed that this will run

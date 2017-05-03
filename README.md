@@ -29,7 +29,7 @@ Version 1.2:<ul>
 	<li>Replaced IsKeyOn with BlueFire.IsKeyOn in AdapterConnected.
 	<li>Improved connection and reconnection.
 </ul>
-		
+
 Version 1.3:<ul>
 	<li>Requires Adapter Firmware Beta 3.10.5.
 	<li>Added getEngineVIN method.
@@ -37,3 +37,22 @@ Version 1.3:<ul>
 	<li>Added RetrievalMethod parameter to Truck Data methods.
 	<li>API documentation has been updated to reflect the above changes.
 </ul>
+
+Version 1.4:<ul>
+	<li>Requires Adapter Firmware Beta 3.10.6.
+    <li>All enums are now outside of the API reference.
+    <li>Added enum RetrievalMethods.
+	<li>Added RetrievalMethods to Truck Data methods.
+    <li>Added property SyncTimeout.
+    <li>Added property AdapterIdFilter.
+    <li>Added property MaxReconnectAttempts.
+    <li>Added property ConnectionState.
+	<li>Added ConnectionState ConnectTimeout.
+    <li>Added Synchronized option to the Connect method.
+	<li>Added ConnectionState CANFilterFull.
+	<li>Renamed property DiscoveryTimeOut to DiscoveryTimeout.
+    <li>Renamed property MaxConnectRetrys to MaxReconnectAttempts.
+	<li>API documentation has been updated to reflect the above changes.
+    <li>API documentation is now included in the GitHub update.
+</ul>
+
