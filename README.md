@@ -63,3 +63,9 @@ Version 2.0:<ul>
 	<li>Added a section in the API doc for Adapter LEDs.
 	<li>Rearranged the sections in the API documentation.
 
+Version 2.1:<ul>
+	<li>Fixed J1708 not retrieving all data requested.
+    <li>Added SignalStrength (RSSI) property.
+    <li>Removed the need for Android Activity.
+    <li>ELD.IsStreaming no longer starts or stops streaming. Use Start/Stop Streaming methods.
+

@@ -27,7 +27,6 @@ namespace Demo.Droid
             // Also, ensure that the Demo.Android project properties Android Options/Linker 
             // Additional supported encodings West is checked.
             //
-            API.Activity = this;
             API.Context = this.ApplicationContext;
 
             // ****************************************************************************
