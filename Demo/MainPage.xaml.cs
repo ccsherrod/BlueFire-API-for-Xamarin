@@ -43,6 +43,35 @@ namespace Demo
 
         private event API.AppEventHandler APIAppHandlerEvent;
 
+        // ELD variables
+        private Int32 CurrentRecordNo;
+        private Boolean IsUploading;
+        private Int32 UploadFrom;
+
+        private const String VINTitle = "VIN";
+        private const String DriverIdTitle = "DriverId";
+
+        private const String StartTitle = "Start Recording";
+        private const String StopTitle = "Stop Recording";
+        private const String StreamLocalTitle = "Stream Locally";
+        private const String StreamRecordTitle = "Stream and Record Locally";
+        private const String UploadRecordsTitle = "Upload Records";
+        private const String SaveRecordsTitle = "Save Records";
+
+        private Boolean DistanceShowNA = false;
+        private Boolean OdometerShowNA = false;
+        private Boolean TotalHoursShowNA = false;
+        private Boolean IdleHoursShowNA = false;
+        private Boolean TotalFuelShowNA = false;
+        private Boolean IdleFuelShowNA = false;
+        private Boolean LatLongShowNA = false;
+
+        public enum CustomRecordIds : byte
+        {
+            StartedELD,
+            StoppedELD
+        }
+
     #endregion
 
     #region Constructor
@@ -73,37 +102,58 @@ namespace Demo
             PasswordLayout.Padding = new Thickness(0, -4, 0, 0);
             PGNLayout.Padding = new Thickness(0, -4, 0, 0);
             PGNDataLayout.Padding = new Thickness(0, -4, 0, 0);
+
+            DriverIdEntryLayout.Padding = new Thickness(0, -4, 0, 0);
+            ELDIntervalEntryLayout.Padding = new Thickness(0, -4, 0, 0);
+            IFTAIntervalEntryLayout.Padding = new Thickness(0, -4, 0, 0);
+            StatsIntervalEntryLayout.Padding = new Thickness(0, -4, 0, 0);
+
 #elif (WINDOWS_UWP)
             LedBrightnessLayout.Padding = new Thickness(0, -4, 0, 0);
-            LedBrightnessLabel.WidthRequest = 160;
-            LedBrightnessText.WidthRequest = 54;
+            LedBrightnessLabel.WidthRequest *= 1.2; // = 160; // 130
+            LedBrightnessEntry.WidthRequest *= 1.2; // = 54; //50
 
             UserNameLayout.Padding = new Thickness(0, -4, 0, 0);
-            UserNameLabel.WidthRequest = 130;
-            UserNameText.WidthRequest = 300;
+            UserNameLabel.WidthRequest *= 1.2; // = 130;
+            UserNameEntry.WidthRequest *= 1.2; // = 300;
 
             PasswordLayout.Padding = new Thickness(0, -4, 0, 0);
-            PasswordLabel.WidthRequest = 130;
-            PasswordText.WidthRequest = 300;
+            PasswordLabel.WidthRequest *= 1.2; // = 130;
+            PasswordEntry.WidthRequest *= 1.2; // = 300;
 
             PGNLayout.Padding = new Thickness(0, -4, 0, 0);
-            PGNLabel.WidthRequest = 54;
-            PGNText.WidthRequest = 100;
+            PGNLabel.WidthRequest *= 1.2; // = 54;
+            PGNEntry.WidthRequest *= 1.2; // = 100;
 
             PGNDataLayout.Padding = new Thickness(0, -4, 0, 0);
-            PGNDataLabel.WidthRequest = 54;
-            PGNDataText.WidthRequest = 300;
+            PGNDataLabel.WidthRequest *= 1.2; // = 54;
+            PGNDataEntry.WidthRequest *= 1.2; // = 300;
+
+            DriverIdEntryLayout.Padding = new Thickness(0, -4, 0, 0);
+            DriverIdLabel.WidthRequest *= 1.2;
+            DriverIdEntry.WidthRequest *= 1.2;
+
+            ELDIntervalEntryLayout.Padding = new Thickness(0, -4, 0, 0);
+            ELDIntervalLabel.WidthRequest *= 1.2;
+            ELDIntervalEntry.WidthRequest *= 1.2;
+
+            IFTAIntervalEntryLayout.Padding = new Thickness(0, -4, 0, 0);
+            IFTAIntervalLabel.WidthRequest *= 1.2;
+            IFTAIntervalEntry.WidthRequest *= 1.2;
+
+            StatsIntervalEntryLayout.Padding = new Thickness(0, -4, 0, 0);
+            StatsIntervalLabel.WidthRequest *= 1.2;
+            StatsIntervalEntry.WidthRequest *= 1.2;
 #endif
         }
 
         private async void Initialize()
         {
             // Keyboards
-            LedBrightnessText.Keyboard = Keyboard.Numeric;
-            PGNText.Keyboard = Keyboard.Numeric;
+            LedBrightnessEntry.Keyboard = Keyboard.Numeric;
+            PGNEntry.Keyboard = Keyboard.Numeric;
 
-            // Clear messages and status
-            ClearEditMessages();
+            ClearMessage();
 
             ShowStatus(ConnectionStates.NotConnected.ToString());
 
@@ -131,14 +181,37 @@ namespace Demo
             J1708Switch.IsToggled = !BlueFire.IgnoreJ1708;
 
             // Security settings
-            UserNameText.Text = "";
-            PasswordText.Text = "";
+            UserNameEntry.Text = "";
+            PasswordEntry.Text = "";
             UpdateButton.IsEnabled = false;
 
             // Proprietary PGNs
-            PGNText.Text = "";
-            PGNDataText.Text = "";
+            PGNEntry.Text = "";
+            PGNDataEntry.Text = "";
             SendButton.IsEnabled = false;
+
+            NextButton.IsEnabled = false;
+            PrevButton.IsEnabled = false;
+
+            // ELD settings
+            DriverIdEntry.Text = ELD.DriverId;
+
+            ELDIntervalEntry.Text = ELD.ELDInterval.ToString();
+            IFTAIntervalEntry.Text = ELD.IFTAInterval.ToString();
+            StatsIntervalEntry.Text = ELD.StatsInterval.ToString();
+
+            IFTASwitch.IsToggled = ELD.RecordIFTA;
+            StatsSwitch.IsToggled = ELD.RecordStats;
+
+            AlignELDSwitch.IsToggled = ELD.AlignELD;
+            AlignIFTASwitch.IsToggled = ELD.AlignIFTA;
+            AlignStatsSwitch.IsToggled = ELD.AlignStats;
+
+            SecureELDSwitch.IsToggled = ELD.IsSecured;
+
+            StreamingSwitch.IsToggled = ELD.IsStreaming;
+            RecordConnectedSwitch.IsToggled = ELD.IsRecordingConnected;
+            RecordDisconnectedSwitch.IsToggled = ELD.IsRecordingDisconnected;
 
             // Show initial key state (key off)
             ShowKeyState();
@@ -150,13 +223,6 @@ namespace Demo
 
             // Or set the retrieval interval if using OnInterval.
             //RetrievalInterval = 1000; // default is BlueFire.MinInterval
-
-            // Show Data
-            GroupNo = 0;
-            NextButton.IsEnabled = false;
-
-            await GetData();
-            ShowData();
 
             // Show connect button
             ShowConnectButton();
@@ -170,14 +236,32 @@ namespace Demo
         {
             base.OnAppearing();
 
-            // Get data if key is on when app is connecting
-            if (BlueFire.IsKeyOn)
-                GetData();
+            // Stop ELD recording if not set to record when app is connected
+            if (!ELD.IsRecordingConnected)
+            {
+                // Stop any streaming
+                if (ELD.IsStreaming)
+                    ELD.StopStreaming();
+
+                // Stop any recording
+                if (ELD.IsStarted)
+                    ELD.Stop();
+            }
+
+            // Get truck data if key is on when app is connecting
+            if (TruckLayout.IsVisible)
+            {
+                if (BlueFire.IsKeyOn)
+                    GetTruckData();
+            }
         }
 
         protected override void OnDisappearing()
         {
             base.OnDisappearing();
+
+            if (ELDLayout.IsVisible)
+                OnELDPageDisappearing();
         }
 
         protected override void OnSizeAllocated(Double Width, Double Height)
@@ -237,7 +321,7 @@ namespace Demo
                     {
                         // Re-retrieve data if on external power
                         if (BlueFire.IsDevicePowered)
-                            await GetData();
+                            await GetTruckData();
 
                         // Not on external power, disconnect the adapter
                         else
@@ -255,7 +339,7 @@ namespace Demo
                         return; // app is ending
 
                     // Re-retrieve app data
-                    await GetData();
+                    await GetTruckData();
 
                     OnAppearing(); // this will invoke Page Event OnAppearing
 
@@ -329,7 +413,7 @@ namespace Demo
 
                 case ConnectionStates.KeyTurnedOn:
                     ShowKeyState();
-                    await GetData(); // get data if key is turned on after app is started
+                    await GetTruckData(); // get data if key is turned on after app is started
                     break;
 
                 case ConnectionStates.KeyTurnedOff:
@@ -440,11 +524,10 @@ namespace Demo
             MessageText.IsVisible = true;
         }
 
-        private void ClearEditMessages()
+        private void ClearMessage()
         {
+            MessageText.Text = "";
             MessageText.IsVisible = false;
-            EditPGNText.IsVisible = false;
-            EditSettingsText.IsVisible = false;
         }
 
     #endregion
@@ -470,11 +553,13 @@ namespace Demo
             IsConnected = true;
             IsConnecting = false;
 
-            ClearEditMessages();
+            ClearMessage();
 
             ShowDisconnectButton();
 
             NextButton.IsEnabled = true;
+            PrevButton.IsEnabled = true;
+
             UpdateButton.IsEnabled = true;
             SendButton.IsEnabled = true;
 
@@ -492,7 +577,7 @@ namespace Demo
 
             // Get data if key is on when app is connecting
             if (BlueFire.IsKeyOn)
-                await GetData(); 
+                await GetTruckData(); 
         }
 
         private void AdapterDisconnected()
@@ -533,6 +618,8 @@ namespace Demo
             IsConnecting = true;
 
             NextButton.IsEnabled = false;
+            PrevButton.IsEnabled = false;
+
             UpdateButton.IsEnabled = false;
             SendButton.IsEnabled = false;
 
@@ -576,45 +663,90 @@ namespace Demo
                 J1708Switch.IsToggled = !IgnoreJ1708; // switch is opposite
             }
 
+            // Show adapter data
+            if (AdapterLayout.IsVisible)
+                ShowAdapterData();
+
+            // Show ELD data
+            else if (ELDLayout.IsVisible)
+                ShowELDData();
+
             // Show truck data
-            ShowTruckData();
+            else if (TruckLayout.IsVisible)
+                ShowTruckData();
+        }
 
-            // Show truck faults
-            if (BlueFire.Truck.ActiveFaultsCount == 0)
-            {
-                FaultText.Text = "NA";
-                ResetButton.IsEnabled = false;
-            }
-            else
-            {
-                FaultText.Text = BlueFire.Faults.Items[0].ToString();
-                ResetButton.IsEnabled = true;
-            }
+    #endregion
 
+    #region Show Adapter Page
+
+        private void ShowAdapterPage()
+        {
+            HideELDPage();
+            TruckLayout.IsVisible = false;
+            AdapterLayout.IsVisible = true;
+
+            ShowAdapterData();
+        }
+
+        private void ShowAdapterData()
+        {
             // Check adapter settings
             if (LedBrightness != BlueFire.LedBrightness)
             {
                 LedBrightness = BlueFire.LedBrightness;
-                LedBrightnessText.Text = LedBrightness.ToString();
+                LedBrightnessEntry.Text = LedBrightness.ToString();
             }
 
             // Check for SendPGN response
             if ((IsSendingPGN || IsMonitoringPGN) && BlueFire.PGN == PGN)
             {
                 IsSendingPGN = false; // only show sending data once
-                PGNDataText.Text = BitConverter.ToString(BlueFire.PGNData);
+                PGNDataEntry.Text = BitConverter.ToString(BlueFire.PGNData);
             }
         }
 
-        #endregion
+    #endregion
 
-    #region Get Data
+    #region Show Truck Pages
 
-        private async Task GetData()
+        private async Task ShowTruckPages(Boolean ShowPrevious = false)
         {
-            // Stop retrieving previous group's adapter data
-            await BlueFire.ClearData();
+            if (!TruckLayout.IsVisible)
+            {
+                HideELDPage();
+                AdapterLayout.IsVisible = false;
+                TruckLayout.IsVisible = true;
 
+                GroupNo = -1; // so it increments to 0
+                ShowPrevious = false;
+            }
+
+            if (ShowPrevious)
+                GroupNo--;
+            else
+                GroupNo++;
+
+            if (GroupNo > MaxGroupNo) // Truck -> Adapter
+            {
+                ShowAdapterPage(); // Show Adapter page
+                return;
+            }
+            else if (GroupNo < 0)
+            {
+                ShowELDPage(); // Show ELD page
+                return;
+            }
+
+            await GetTruckData();
+        }
+
+    #endregion
+
+    #region Get Truck Data
+
+        private async Task GetTruckData()
+        {
             DataView1.Text = "NA";
             DataView2.Text = "NA";
             DataView3.Text = "NA";
@@ -627,9 +759,10 @@ namespace Demo
 
             // Set the retrieval method and interval.
             // Note, this is here for demo-ing the different methods.
-            //RetrievalMethod = RetrievalMethods.OnChange; // default
-
-            RetrievalMethod = RetrievalMethods.OnInterval;
+            RetrievalMethod = RetrievalMethods.OnChange; // default
+#if (__ANDROID__)
+            RetrievalMethod = RetrievalMethods.OnInterval; // recommended for Android
+#endif
             //RetrievalInterval = 5000; // default is MinInterval, only required if RetrievalMethod is OnInterval
 
             //RetrievalMethod = RetrievalMethods.Synchronized;
@@ -826,6 +959,18 @@ namespace Demo
                     DataView7.Text = "";
                     break;
             }
+
+            // Show truck faults
+            if (BlueFire.Truck.ActiveFaultsCount == 0)
+            {
+                FaultText.Text = "NA";
+                ResetButton.IsEnabled = false;
+            }
+            else
+            {
+                FaultText.Text = BlueFire.Faults.Items[0].ToString();
+                ResetButton.IsEnabled = true;
+            }
         }
 
         private String FormatInt32(Int32 Data)
@@ -843,41 +988,889 @@ namespace Demo
             return Math.Round(Data, Precision).ToString();
         }
 
-    #endregion
+        #endregion
 
-    #region Log Error
+    #region Show ELD Page
 
-        private void LogError()
+        #region Show/Hide Page
+
+        private void ShowELDPage()
         {
-            ErrorMessage = BlueFire.ErrorMessage;
-            ErrorException = BlueFire.ErrorException;
+            AdapterLayout.IsVisible = false;
+            TruckLayout.IsVisible = false;
+            ELDLayout.IsVisible = true;
 
-            if (ErrorException != null)
-                ErrorMessage += @"/r/n" + @"/r/n" + ErrorException.Message;
+            ClearELDPage();
 
-            if (ErrorMessage == "")
+            CheckStreaming();
+
+            if (!ELD.IsCompatibleAdapter)
+            {
+                ShowMessage("ELD is not available with your current adapter. You need to upgrade to firmware 3.10+");
                 return;
+            }
 
-            WriteLog(ErrorMessage);
+            // Get current record
+            CurrentRecordNo = -1;
+
+            ELD.GetCurrentRecord();
+
+            SetELDButtons();
         }
 
-    #endregion
-
-    #region Write Log
-
-        private void WriteLog(String Message)
+        private void HideELDPage()
         {
-            // Write the message to a log file.
-            // TODO - must implement this in an actual app.
+            if (!ELDLayout.IsVisible)
+                return;
 
-#if (WINDOWS_UWP)
-            Debug.WriteLine(Message);
-#else
-            Debug.Print(Message);
-#endif
+            EditELDData();
+
+            ELDLayout.IsVisible = false;
+
+            OnELDPageDisappearing();
         }
 
         #endregion
+
+        #region Clear ELD Page
+
+        private void ClearELDPage()
+        {
+            CurrentRecordNo = -1;
+
+            FormatRemainingText();
+
+            RecordNoText.Text = "";
+            RecordIdText.Text = "";
+            TimeText.Text = "";
+            VINText.Text = "";
+            DistanceText.Text = "";
+            OdometerText.Text = "";
+            TotalHoursText.Text = "";
+            IdleHoursText.Text = "";
+            TotalFuelText.Text = "";
+            IdleFuelText.Text = "";
+            LatitudeText.Text = "";
+            LongitudeText.Text = "";
+
+            RefreshELDPage();
+        }
+
+        #endregion
+
+        #region Set ELD Buttons
+
+        private void SetELDButtons()
+        {
+            // Streaming text
+            if (ELD.IsStreaming)
+            {
+                if (ELD.IsRecordingConnected)
+                    StreamingLabel.Text = StreamRecordTitle;
+                else
+                    StreamingLabel.Text = StreamLocalTitle;
+            }
+
+            // Check for third party securing access
+            if (ELD.IsAccessSecured)
+            {
+                EnableELDInput(false);
+
+                StartELDButton.IsVisible = false;
+                UploadELDButton.IsVisible = false;
+                DeleteELDButton.IsVisible = false;
+
+                return;
+            }
+
+            // Start button text
+            if (ELD.IsStarted)
+                StartELDButton.Text = StopTitle;
+            else
+                StartELDButton.Text = StartTitle;
+
+            // Uploading
+            if (IsUploading)
+            {
+                EnableELDInput(true);
+
+                StartELDButton.IsEnabled = false;
+                DeleteELDButton.IsEnabled = false;
+                UploadELDButton.IsEnabled = false;
+
+                return;
+            }
+
+            // Recording
+            if (ELD.IsStarted)
+            {
+                EnableELDInput(false);
+
+                StartELDButton.IsEnabled = true; // for stop
+                DeleteELDButton.IsEnabled = false;
+                UploadELDButton.IsEnabled = false;
+
+                return;
+            }
+
+            // Not recording and local records available
+            if (ELD.LocalRecordNo > 0)
+            {
+                // Enable the email and delete buttons
+                UploadELDButton.Text = SaveRecordsTitle;
+                UploadELDButton.IsEnabled = true;
+
+                DeleteELDButton.IsEnabled = true;
+                StartELDButton.IsEnabled = false;
+                return;
+            }
+
+            // Not recording and adapter records available
+            if (ELD.CurrentRecordNo > 0)
+            {
+                EnableELDInput(true);
+
+                if (ELD.IsRecordingLocally || ELD.RemainingPercent == 0)  // recording locally or memory full
+                    StartELDButton.IsEnabled = false;
+                else
+                    StartELDButton.IsEnabled = true; // for start
+
+                if (ELD.UploadFrom == 1)
+                    DeleteELDButton.IsEnabled = true;
+
+                UploadELDButton.Text = UploadRecordsTitle;
+                UploadELDButton.IsEnabled = true;
+
+                return;
+            }
+
+            // Not recording and no records
+            EnableELDInput(true);
+
+            StartELDButton.IsEnabled = true; // for start
+
+            UploadELDButton.Text = UploadRecordsTitle;
+            UploadELDButton.IsEnabled = false;
+
+            DeleteELDButton.IsEnabled = false;
+        }
+
+        private void EnableELDInput(Boolean IsEnabled)
+        {
+            DriverIdEntry.IsEnabled = IsEnabled;
+
+            ELDIntervalEntry.IsEnabled = IsEnabled;
+            AlignELDSwitch.IsEnabled = IsEnabled;
+
+            IFTASwitch.IsEnabled = IsEnabled;
+            IFTAIntervalEntry.IsEnabled = IsEnabled;
+            AlignIFTASwitch.IsEnabled = IsEnabled;
+
+            StatsSwitch.IsEnabled = IsEnabled;
+            StatsIntervalEntry.IsEnabled = IsEnabled;
+            AlignStatsSwitch.IsEnabled = IsEnabled;
+
+            SecureELDSwitch.IsEnabled = IsEnabled;
+
+            StreamingSwitch.IsEnabled = IsEnabled;
+            RecordConnectedSwitch.IsEnabled = IsEnabled;
+            RecordDisconnectedSwitch.IsEnabled = IsEnabled;
+        }
+
+        #endregion
+
+        #region Start/Stop Recording
+
+        private void StartStop()
+        {
+            // Check for starting a new ELD recording
+            if (!ELD.IsStarted && ELD.IsNewRecording)
+            {
+                // Check if not enough memory to record all ELD records
+                if (!ELD.IsTotalMemoryAvailable)
+                {
+                    ShowMessage("There is not emough adapter memory to record ELD data. You must change your ELD Interval or Duration in Settings.");
+                    return;
+                }
+                // Check if not enough memory remaining to record all ELD records
+                if (!ELD.IsMemoryAvailable)
+                    // Memory available only if reset to the beginning of memory
+                    ELD.Reset();
+            }
+
+            // Start or stop recording
+
+            if (!ELD.IsStarted) // start recording
+            {
+                // Check ELD data
+                if (!EditELDData())
+                    return;
+
+                // Check for any recording set
+                if (!ELD.IsStreaming && ELD.RecordingMode == ELD.RecordingModes.RecordNever)
+                {
+                    ShowMessage("You have not set any ELD recording.");
+                    return;
+                }
+
+                BlueFire.SetAdapterTime();
+
+                CheckStreaming();
+
+                if (ELD.IsRecordingLocally) // recording locally
+                {
+                    ELD.RecordNo = 0;
+                }
+
+                SendCustomRecord((ELD.RecordIds)CustomRecordIds.StartedELD);
+
+                ELD.Start();
+
+                ELD.UploadRecordNo = 0;
+            }
+            else // stop recording
+            {
+                SendCustomRecord((ELD.RecordIds)CustomRecordIds.StoppedELD);
+
+                ELD.Stop();
+            }
+        }
+
+        private void CheckStreaming()
+        {
+            // Start streaming ELD records
+            if (ELD.IsStreaming)
+                ELD.StartStreaming();
+            else
+                ELD.StopStreaming();
+        }
+
+        #endregion
+
+        #region Custom ELD Record
+
+        private void SendCustomRecord(ELD.RecordIds RecordId)
+        {
+            Byte CustomId = (Byte)((Byte)ELD.RecordIds.Custom + (Byte)RecordId);
+
+            // Set the data to whatever
+            Byte[] CustomData = new Byte[ELD.CustomDataLength];
+            CustomData[0] = 1;
+            CustomData[1] = 2;
+
+            // Send the custom record to the adapter
+            ELD.WriteRecord(CustomId, CustomData);
+        }
+
+        #endregion
+
+        #region Show ELD Data
+
+        private void ShowELDData()
+        {
+            if (!ELD.IsCompatibleAdapter)
+                return;
+
+            // Check for adapter or local recording, or adapter upload
+            if (ELD.CurrentRecordNo > 0 || ELD.IsRecordingLocally)
+                if (ELD.RecordNo > 0 && ELD.RecordNo != CurrentRecordNo)
+                {
+                    CurrentRecordNo = ELD.RecordNo;
+
+                    RefreshELDPage(CurrentRecordNo);
+
+                    if (ELD.IsRecordingLocally && !IsUploading) // recording locally
+                    {
+                        if (ELD.IsStarted || ELD.LocalRecordNo > 0)
+                        {
+                            ELD.LocalRecordNo = ELD.RecordNo;
+
+                            ELD.UploadFrom = 0;
+                            ELD.UploadTo = ELD.RecordNo;
+                            ELD.UploadRecordNo = ELD.RecordNo;
+
+                            WriteELDRecord();
+                        }
+                    }
+                    else // recording or uploading from the adapter
+                    {
+                        if (IsUploading) // upload from adapter
+                            UploadELDRecord(); // will get next record
+                    }
+                }
+
+            SetELDButtons();
+        }
+
+        #endregion
+
+        #region Refresh ELD Page
+
+        private void RefreshELDPage(Int32 RecordNo = 0)
+        {
+            const String DateFormat = "M-dd-yy h:mm:ss tt";
+
+            if (RecordNo > 0)
+            {
+                FormatRemainingText();
+
+                ELD.RecordIds RecordId = (ELD.RecordIds)ELD.RecordId;
+
+                // Record No
+                if (RecordId == ELD.RecordIds.Waiting)
+                    RecordNoText.Text = "";
+                else
+                    RecordNoText.Text = RecordNo.ToString();
+
+                // Record Id
+                if (RecordId >= ELD.RecordIds.Custom)
+                    RecordIdText.Text = ((CustomRecordIds)(RecordId - ELD.RecordIds.Custom)).ToString();
+                else
+                    RecordIdText.Text = RecordId.ToString();
+
+                // Driver Id
+                if (ELD.RecordId == (Byte)ELD.RecordIds.DriverId)
+                {
+                    VINLabel.Text = DriverIdTitle;
+                    VINText.Text = ELD.DriverId;
+                }
+
+                // VIN
+                else if (ELD.RecordId == (Byte)ELD.RecordIds.VIN)
+                {
+                    VINLabel.Text = VINTitle;
+                    VINText.Text = ELD.VIN;
+                }
+                else if (RecordId >= ELD.RecordIds.Custom || ELD.RecordId == (Byte)ELD.RecordIds.Waiting)
+                {
+                    VINLabel.Text = VINTitle;
+                    VINText.Text = "";
+                }
+                else // ELD, IFTA or Stats
+                {
+                    VINLabel.Text = VINTitle;
+                    if (ELD.VIN == Const.NA)
+                        VINText.Text = "";
+                    else
+                        VINText.Text = ELD.VIN;
+                }
+
+                SetShowNA();
+
+                TimeText.Text = Helper.FormatDate(ELD.Time.Ticks, DateFormat, true);
+                DistanceText.Text = Helper.FormatDistance(ELD.Distance, DistanceShowNA, true);
+                OdometerText.Text = Helper.FormatDistance(ELD.Odometer, OdometerShowNA, true);
+                TotalHoursText.Text = Helper.FormatEngineHours(ELD.TotalHours, TotalHoursShowNA);
+                IdleHoursText.Text = Helper.FormatEngineHours(ELD.IdleHours, IdleHoursShowNA);
+                TotalFuelText.Text = Helper.FormatFuelUsed(ELD.TotalFuel, TotalFuelShowNA, true);
+                IdleFuelText.Text = Helper.FormatFuelUsed(ELD.IdleFuel, IdleFuelShowNA, true);
+                LatitudeText.Text = Helper.FormatLatLong(ELD.Latitude, LatLongShowNA);
+                LongitudeText.Text = Helper.FormatLatLong(ELD.Longitude, LatLongShowNA);
+
+                SetTextColor((ELD.RecordIds)ELD.RecordId, RecordIdText);
+                SetTextColor(ELD.Time, TimeText);
+                if (ELD.RecordId == (Byte)ELD.RecordIds.DriverId)
+                    SetTextColor(ELD.DriverId, VINText);
+                else
+                    SetTextColor(ELD.VIN, VINText);
+                SetTextColor(ELD.Distance, DistanceText);
+                SetTextColor(ELD.Odometer, OdometerText);
+                SetTextColor(ELD.TotalHours, TotalHoursText);
+                SetTextColor(ELD.IdleHours, IdleHoursText);
+                SetTextColor(ELD.TotalFuel, TotalFuelText);
+                SetTextColor(ELD.IdleFuel, IdleFuelText);
+                SetTextColor(ELD.Latitude, LatitudeText);
+                SetTextColor(ELD.Longitude, LongitudeText);
+            }
+
+            SetELDButtons();
+        }
+
+        private void FormatRemainingText()
+        {
+            Single RemainingPercent;
+            String RemaingTimeRecordText;
+
+            if (IsUploading)
+            {
+                Int32 RecordNo = ELD.RecordNo;
+                if (RecordNo == 0)
+                    RecordNo = ELD.UploadRecordNo;
+
+                RemainingPercent = ((Single)(ELD.CurrentRecordNo - RecordNo) / ELD.CurrentRecordNo) * 100F;
+                RemaingTimeRecordText = " (" + (ELD.CurrentRecordNo - RecordNo) + " records)";
+            }
+            else
+            {
+                RemainingPercent = ELD.RemainingPercent;
+
+                RemaingTimeRecordText = "";
+                //if (ELD.RemainingTime <= Const.HoursPerWeek) // one week
+                RemaingTimeRecordText = " (" + Helper.FormatNumber(ELD.RemainingTime, 2) + Helper.GetUM(Helper.UnitOfMeasures.Hours) + ")";
+            }
+
+            RemainingText.Text = Helper.FormatNumber(RemainingPercent, 2) + Helper.GetUM(Helper.UnitOfMeasures.Percent) + RemaingTimeRecordText;
+        }
+
+        #region Set ShowNA
+
+        private void SetShowNA()
+        {
+            DistanceShowNA = false;
+            OdometerShowNA = false;
+            TotalHoursShowNA = false;
+            IdleHoursShowNA = false;
+            TotalFuelShowNA = false;
+            IdleFuelShowNA = false;
+            LatLongShowNA = false;
+
+            switch ((ELD.RecordIds)ELD.RecordId)
+            {
+                case ELD.RecordIds.DriverId:
+                    break;
+
+                case ELD.RecordIds.VIN:
+                    break;
+
+                case ELD.RecordIds.IFTA:
+                    DistanceShowNA = true;
+                    OdometerShowNA = true;
+                    TotalFuelShowNA = true;
+                    LatLongShowNA = true;
+                    break;
+
+                case ELD.RecordIds.Stats:
+                    DistanceShowNA = true;
+                    TotalHoursShowNA = true;
+                    TotalFuelShowNA = true;
+                    IdleHoursShowNA = true;
+                    IdleFuelShowNA = true;
+                    break;
+
+                // ELD 
+                case ELD.RecordIds.StartEngine:
+                case ELD.RecordIds.StartDriving:
+                case ELD.RecordIds.Driving:
+                case ELD.RecordIds.StopDriving:
+                case ELD.RecordIds.StopEngine:
+                    DistanceShowNA = true;
+                    OdometerShowNA = true;
+                    TotalHoursShowNA = true;
+                    LatLongShowNA = true;
+                    break;
+
+                // Custom 
+                default:
+                    break;
+            }
+        }
+
+        #endregion
+
+        #region Set Text Color
+
+        public static void SetTextColor(ELD.RecordIds Value, Label Control)
+        {
+            if (Value == ELD.RecordIds.Waiting)
+                Control.TextColor = Color.Red;
+            else
+                Control.TextColor = Color.Green;
+        }
+
+        public static void SetTextColor(Single Value, Label Control)
+        {
+            if (Value == 0)
+                Control.TextColor = Color.Gray;
+            else
+                Control.TextColor = Color.Green;
+        }
+
+        public static void SetTextColor(Double Value, Label Control)
+        {
+            if (Value == 0)
+                Control.TextColor = Color.Gray;
+            else
+                Control.TextColor = Color.Green;
+        }
+
+        public static void SetTextColor(String Value, Label Control)
+        {
+            if (Value == Const.NA)
+                Control.TextColor = Color.Gray;
+            else
+                Control.TextColor = Color.Green;
+        }
+
+        public static void SetTextColor(DateTime Value, Label Control)
+        {
+            if (Value.Year <= Const.BaseYear)
+                Control.TextColor = Color.Gray;
+            else
+                Control.TextColor = Color.Green;
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Edit ELD Data
+
+        private Boolean EditELDData()
+        {
+            if (!EditDriver())
+                return false;
+
+            if (!EditELDInterval())
+                return false;
+
+            if (IFTASwitch.IsToggled)
+                if (!EditIFTAInterval())
+                return false;
+
+            if (StatsSwitch.IsToggled)
+                if (!EditStatsInterval())
+                return false;
+
+            // Save ELD data
+            ELD.RecordIFTA = IFTASwitch.IsToggled;
+            ELD.RecordStats = StatsSwitch.IsToggled;
+
+            ELD.IsSecured = SecureELDSwitch.IsToggled;
+
+            ELD.IsStreaming = StreamingSwitch.IsToggled;
+
+            ELD.SetRecordingMode(RecordConnectedSwitch.IsToggled, RecordDisconnectedSwitch.IsToggled);
+
+            SetELDButtons();
+
+            return true;
+        }
+
+        private Boolean EditDriver()
+        {
+            String DriverId = DriverIdEntry.Text.Trim();
+
+            if (DriverId.Length > ELD.CustomDataLength) // driver id is treated as a custom record
+            {
+                ShowMessage("Driver Id length is too long for ELD custom records.");
+                return false;
+            }
+
+            ELD.DriverId = DriverId;
+
+            return true;
+        }
+
+        private Boolean EditELDInterval()
+        {
+            Single ELDInterval;
+            if (!Single.TryParse("0" + ELDIntervalEntry.Text, out ELDInterval))
+            {
+                ShowMessage("ELD Interval must be numeric.");
+                return false;
+            }
+
+            if (ELDInterval == 0)
+                ELDInterval = ELD.DefaultELDInterval;
+
+            if (AlignELDSwitch.IsToggled && !ELD.IsHourAligned(ELDInterval))
+            {
+                ShowMessage("ELD Interval cannot be aligned to the hour.");
+                AlignELDSwitch.IsToggled = false;
+                return false;
+            }
+
+            ELD.ELDInterval = ELDInterval;
+
+            ELDIntervalEntry.Text = ELDInterval.ToString();
+
+            if (ELD.MaxRecords > 0 && !ELD.IsTotalMemoryAvailable)
+            {
+                ShowMessage("There is not emough adapter memory to record ELD data. You must change your ELD Interval or Duration in Settings.");
+                return false;
+            }
+
+            FormatRemainingText();
+
+            return true;
+        }
+
+        private Boolean EditIFTAInterval()
+        {
+            Single ELDIFTAInterval;
+            if (!Single.TryParse("0" + IFTAIntervalEntry.Text, out ELDIFTAInterval))
+            {
+                ShowMessage("IFTA Interval must be numeric.");
+                return false;
+            }
+
+            if (ELDIFTAInterval == 0)
+                ELDIFTAInterval = ELD.DefaultIFTAInterval;
+
+            if (AlignIFTASwitch.IsToggled && !ELD.IsHourAligned(ELDIFTAInterval))
+            {
+                ShowMessage("IFTA Interval cannot be aligned to the hour.");
+                AlignIFTASwitch.IsToggled = false;
+                return false;
+            }
+
+            ELD.IFTAInterval = ELDIFTAInterval;
+
+            IFTAIntervalEntry.Text = ELDIFTAInterval.ToString();
+
+            if (ELD.MaxRecords > 0 && !ELD.IsTotalMemoryAvailable)
+            {
+                ShowMessage("There is not emough adapter memory to record ELD data. You must change your ELD Interval or Duration in Settings.");
+                return false;
+            }
+
+            FormatRemainingText();
+
+            return true;
+        }
+
+        private Boolean EditStatsInterval()
+        {
+            Single ELDStatsInterval;
+            if (!Single.TryParse("0" + StatsIntervalEntry.Text, out ELDStatsInterval))
+            {
+                ShowMessage("Stats Interval must be numeric.");
+                return false;
+            }
+
+            if (ELDStatsInterval == 0)
+                ELDStatsInterval = ELD.DefaultStatsInterval;
+
+            if (AlignStatsSwitch.IsToggled && !ELD.IsHourAligned(ELDStatsInterval))
+            {
+                ShowMessage("Stats Interval cannot be aligned to the hour.");
+                AlignStatsSwitch.IsToggled = false;
+                return false;
+            }
+
+            ELD.StatsInterval = ELDStatsInterval;
+
+            StatsIntervalEntry.Text = ELDStatsInterval.ToString();
+
+            if (ELD.MaxRecords > 0 && !ELD.IsTotalMemoryAvailable)
+            {
+                ShowMessage("There is not emough adapter memory to record ELD data. You must change your ELD Interval or Duration in Settings.");
+                return false;
+            }
+
+            FormatRemainingText();
+
+            return true;
+        }
+
+        #endregion
+
+        #region Upload ELD Data
+
+        private void StartELDUpload()
+        {
+            ELD.UploadFrom = 1;
+            ELD.UploadTo = ELD.CurrentRecordNo;
+
+            ELD.UploadRecordNo = 0;
+
+            CurrentRecordNo = 0;
+            UploadFrom = ELD.UploadFrom;
+
+            // Reset ELD VIN prior to retrieving the first row.
+            // Note, this is for showing VIN only with and after the VIN record.
+            ELD.VIN = "";
+
+            ELD.GetFirstRecord();
+
+            IsUploading = true;
+        }
+
+        private void UploadELDRecord()
+        {
+            WriteELDRecord();
+
+            // Check for end of upload
+            if (ELD.RecordNo == ELD.UploadTo)
+            {
+                IsUploading = false;
+
+                ELD.UploadFrom = UploadFrom;
+
+                ELD.UploadRecordNo = CurrentRecordNo;
+
+                RefreshELDPage(CurrentRecordNo);
+
+                ShowMessage("The ELD upload has finished.");
+            }
+            else
+                ELD.GetNextRecord();
+        }
+
+        #endregion
+
+        #region Save ELD Data
+
+        private void SaveELDData()
+        {
+            // Save the locallly retrieved ELD records
+
+            ShowMessage("ELD Records have been Saved.");
+        }
+
+        #endregion
+
+        #region Write ELD Record
+
+        private Boolean WriteELDRecord()
+        {
+            String ELDRecord = "";
+            const String DateFormat = "M/d/yyyy H:mm:ss";
+
+            String RecordIdText;
+            ELD.RecordIds _RecordId = (ELD.RecordIds)ELD.RecordId;
+
+            if (_RecordId == ELD.RecordIds.Waiting)
+                return true;
+
+            if (_RecordId >= ELD.RecordIds.Custom)
+                RecordIdText = ((CustomRecordIds)(_RecordId - ELD.RecordIds.Custom)).ToString();
+            else
+                RecordIdText = _RecordId.ToString();
+
+            String DriverVIN = "";
+            if (_RecordId < ELD.RecordIds.Custom)
+                if (_RecordId == ELD.RecordIds.DriverId)
+                    DriverVIN = ELD.DriverId;
+                else
+                    DriverVIN = ELD.VIN;
+
+            ELDRecord += ELD.RecordNo + "," +
+                         ELD.RecordId + "," +
+                         RecordIdText + "," +
+                         DriverVIN + "," +
+                         Helper.FormatDate(ELD.Time.Ticks, DateFormat, true) + "," +
+                         Helper.FormatLatLong(ELD.Latitude, LatLongShowNA) + "," +
+                         Helper.FormatLatLong(ELD.Longitude, LatLongShowNA) + "," +
+                         Helper.FormatDistance(ELD.Distance, DistanceShowNA, false, true) + "," +
+                         Helper.FormatDistance(ELD.Odometer, OdometerShowNA, false, true) + "," +
+                         Helper.FormatEngineHours(ELD.TotalHours, TotalHoursShowNA, true) + "," +
+                         Helper.FormatEngineHours(ELD.IdleHours, IdleHoursShowNA, true) + "," +
+                         Helper.FormatFuelUsed(ELD.TotalFuel, TotalFuelShowNA, false, true) + "," +
+                         Helper.FormatFuelUsed(ELD.IdleFuel, IdleFuelShowNA, false, true);
+
+            // Write log record
+            Debug.WriteLine(ELDRecord);
+
+            return true;
+        }
+
+        #endregion
+
+        #region Delete ELD Data
+
+        private void DeleteELDData()
+        {
+            // Check for deleting local records first
+            if (ELD.LocalRecordNo > 0)
+            {
+                ELD.RecordNo = 0;
+                ELD.LocalRecordNo = 0;
+            }
+
+            //  Check adapter records
+            else if (ELD.CurrentRecordNo > 0)
+            {
+                if (ELD.ResetRecords)
+                    ELD.Reset();
+                else
+                    ELD.Delete(ELD.UploadTo);
+
+                IsUploading = false;
+            }
+
+            CurrentRecordNo = 0;
+            ELD.UploadRecordNo = 0; // must be cleared for both local and adapter recording
+
+            ClearELDPage();
+
+            ShowMessage("The ELD records have been deleted.");
+        }
+
+        #endregion
+
+        #region ELD Buttons (Start, Update, Delete)
+
+        private void StartELDButton_Clicked(object sender, System.EventArgs e)
+        {
+            StartELDButton.IsEnabled = false;
+
+            StartStop();
+
+            SetELDButtons();
+        }
+
+        private void UpdateELDButton_Clicked(object sender, System.EventArgs e)
+        {
+            UploadELDButton.IsEnabled = false;
+
+            if (ELD.IsRecordingLocally)
+                SaveELDData();
+            else
+                StartELDUpload();
+
+            SetELDButtons();
+        }
+
+        private void DeleteELDButton_Clicked(object sender, System.EventArgs e)
+        {
+            DeleteELDButton.IsEnabled = false;
+
+            DeleteELDData();
+
+            SetELDButtons();
+        }
+
+        #endregion
+
+        #region OnELDPage Disappearing
+
+        private void OnELDPageDisappearing()
+        {
+            // Pause uploading
+            if (IsUploading)
+            {
+                IsUploading = false;
+                ShowMessage("ELD Uploading has been cancelled.");
+            }
+
+            // Stop local recording
+            else if (ELD.IsRecordingLocally) // recording locally
+            {
+                if (ELD.LocalRecordNo > 0)
+                {
+                    ELD.Stop();
+
+                    ShowMessage("Local ELD Recording has been cancelled.");
+
+                    // Restart ELD for disconnected recording
+                    if (ELD.IsRecordingDisconnected)
+                    {
+                        if (!ELD.IsStarted)
+                            ELD.Start();
+                    }
+
+                }
+            }
+
+            // Stop streaming
+            if (ELD.IsStreaming)
+                ELD.StopStreaming();
+        }
+
+        #endregion
+
+    #endregion
 
     #region Connect Button
 
@@ -894,11 +1887,13 @@ namespace Demo
                 ShowStatus("Connecting...");
 
                 NextButton.IsEnabled = false;
+                PrevButton.IsEnabled = false;
+
                 UpdateButton.IsEnabled = false;
                 ResetButton.IsEnabled = false;
                 SendButton.IsEnabled = false;
 
-                ClearEditMessages();
+                ClearMessage();
 
                 ShowDisconnectButton();
 
@@ -964,20 +1959,6 @@ namespace Demo
 
     #endregion
 
-    #region Next Button
-
-        // Next Truck Data
-        private async void NextButton_Clicked(object sender, EventArgs e)
-        {
-            GroupNo++;
-            if (GroupNo > MaxGroupNo)
-                GroupNo = 0;
-
-            await GetData();
-        }
-
-    #endregion
-
     #region Update Button
 
         // Adapter settings
@@ -986,34 +1967,33 @@ namespace Demo
             // LED Brightness
             Byte LedBrightness;
 
-            EditSettingsText.IsVisible = false;
+            ClearMessage();
 
-            if (!Byte.TryParse(LedBrightnessText.Text, out LedBrightness) || LedBrightness < 5 || LedBrightness > 100)
+            if (!Byte.TryParse(LedBrightnessEntry.Text, out LedBrightness) || LedBrightness < 5 || LedBrightness > 100)
             {
-                EditSettingsText.Text = "Invalid LED Brightness";
-                EditSettingsText.IsVisible = true;
+                ShowMessage("Invalid LED Brightness");
                 return;
             }
             BlueFire.LedBrightness = LedBrightness;
 
             // Security
-            String UserName = UserNameText.Text.Trim();
-            String Password = PasswordText.Text.Trim();
+            Boolean SecureAdapter = SecureAdapterSwitch.IsToggled;
+
+            String UserName = UserNameEntry.Text.Trim();
+            String Password = PasswordEntry.Text.Trim();
 
             if (UserName.Length > 20)
             {
-                EditSettingsText.Text = "Invalid User Name";
-                EditSettingsText.IsVisible = true;
+                ShowMessage("Invalid User Name");
                 return;
             }
             if (Password.Length > 12)
             {
-                EditSettingsText.Text = "Invalid Password";
-                EditSettingsText.IsVisible = true;
+                ShowMessage("Invalid Password");
                 return;
             }
 
-            BlueFire.UpdateSecurity(UserName, Password);
+            BlueFire.UpdateSecurity(SecureAdapter, UserName, Password);
         }
 
     #endregion
@@ -1035,13 +2015,11 @@ namespace Demo
         {
             IsSendingPGN = false;
             IsMonitoringPGN = false;
-            EditPGNText.IsVisible = false;
 
             // Get PGN
-            if (!Int32.TryParse("0" + PGNText.Text.Trim(), out PGN))
+            if (!Int32.TryParse("0" + PGNEntry.Text.Trim(), out PGN))
             {
-                EditPGNText.Text = "PGN must be numeric.";
-                EditPGNText.IsVisible = true;
+                ShowMessage("PGN must be numeric.");
                 return;
             }
 
@@ -1052,7 +2030,7 @@ namespace Demo
             // Get PGN Data
             Byte[] PGNBytes = new Byte[8];
 
-            String PGNData = PGNDataText.Text.Trim();
+            String PGNData = PGNDataEntry.Text.Trim();
 
             if (PGNData.Length == 0) // Monitor a PGN
             {
@@ -1065,8 +2043,7 @@ namespace Demo
                 // Edit the PGN Data to be 16 hex characters (8 bytes)
                 if (PGNData.Length != 16)
                 {
-                    EditPGNText.Text = "PGN Data must be 16 hex characters (8 bytes).";
-                    EditPGNText.IsVisible = true;
+                    ShowMessage("PGN Data must be 16 hex characters (8 bytes).");
                     return;
                 }
 
@@ -1078,8 +2055,7 @@ namespace Demo
                 }
                 catch
                 {
-                    EditPGNText.Text = "PGN Data must be 16 hex characters (8 bytes).";
-                    EditPGNText.IsVisible = true;
+                    ShowMessage("PGN must be numeric.");
                     return;
                 }
 
@@ -1087,6 +2063,86 @@ namespace Demo
                 IsSendingPGN = true;
                 BlueFire.SendPGN(PGN, PGNBytes);
             }
+        }
+
+        #endregion
+
+    #region Next/Previous Buttons
+
+        // Next Truck Data
+        private async void NextButton_Clicked(object sender, EventArgs e)
+        {
+            // Clear message
+            ClearMessage();
+
+            // Clear any previous adapter data retrieval
+            await BlueFire.ClearData();
+
+            // Change pages
+
+            if (AdapterLayout.IsVisible) // Adapter -> ELD
+                ShowELDPage();
+
+            else if (ELDLayout.IsVisible) // ELD -> Truck
+                await ShowTruckPages();
+
+            else // Truck -> Adapter
+                await ShowTruckPages(); // ShowTruckPage will navigate to the Adapter page
+        }
+
+        // Previous Truck Data
+        private async void PrevButton_Clicked(object sender, EventArgs e)
+        {
+            // Clear message
+            ClearMessage();
+
+            // Clear any previous adapter data retrieval
+            await BlueFire.ClearData();
+
+            // Change pages
+
+            if (ELDLayout.IsVisible) // ELD -> Adapter
+                ShowAdapterPage();
+
+            else if (TruckLayout.IsVisible) // // ShowTruckPage will navigate to the ELD page
+                await ShowTruckPages(true);
+
+            else // Adapter -> Truck
+                await ShowTruckPages(); 
+        }
+
+    #endregion
+
+    #region Log Error
+
+        private void LogError()
+        {
+            ErrorMessage = BlueFire.ErrorMessage;
+            ErrorException = BlueFire.ErrorException;
+
+            if (ErrorException != null)
+                ErrorMessage += @"/r/n" + @"/r/n" + ErrorException.Message;
+
+            if (ErrorMessage == "")
+                return;
+
+            WriteLog(ErrorMessage);
+        }
+
+    #endregion
+
+    #region Write Log
+
+        private void WriteLog(String Message)
+        {
+            // Write the message to a log file.
+            // TODO - must implement this in an actual app.
+
+#if (WINDOWS_UWP)
+            Debug.WriteLine(Message);
+#else
+            Debug.Print(Message);
+#endif
         }
 
     #endregion

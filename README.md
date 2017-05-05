@@ -56,3 +56,10 @@ Version 1.4:<ul>
     <li>API documentation is now included in the GitHub update.
 </ul>
 
+Version 2.0:<ul>
+	<li>Compatible with Adapter Firmware Beta 3.10.6+
+    <li>Added ELD Recording.
+	<li>Fixed a few data retrieval bugs.
+	<li>Added a section in the API doc for Adapter LEDs.
+	<li>Rearranged the sections in the API documentation.
+

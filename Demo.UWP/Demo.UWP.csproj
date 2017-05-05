@@ -18,14 +18,11 @@
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PackageCertificateKeyFile>Demo.UWP_TemporaryKey.pfx</PackageCertificateKeyFile>
-    <SccProjectName>
-    </SccProjectName>
-    <SccLocalPath>
-    </SccLocalPath>
+    <SccProjectName>"%24/BlueFire/Xamarin/Xamarin/API/BlueFire-API-for-Xamarin", QVHBAAAA</SccProjectName>
+    <SccLocalPath>..</SccLocalPath>
     <SccAuxPath>
     </SccAuxPath>
-    <SccProvider>
-    </SccProvider>
+    <SccProvider>MSSCCI:Microsoft Visual SourceSafe</SccProvider>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>x86|x64|arm</AppxBundlePlatforms>

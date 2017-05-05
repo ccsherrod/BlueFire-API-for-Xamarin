@@ -13,14 +13,11 @@
     <AssemblyName>Demo.iOS</AssemblyName>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <SccProjectName>
-    </SccProjectName>
-    <SccLocalPath>
-    </SccLocalPath>
+    <SccProjectName>"%24/BlueFire/Xamarin/Xamarin/API/BlueFire-API-for-Xamarin", QVHBAAAA</SccProjectName>
+    <SccLocalPath>..</SccLocalPath>
     <SccAuxPath>
     </SccAuxPath>
-    <SccProvider>
-    </SccProvider>
+    <SccProvider>MSSCCI:Microsoft Visual SourceSafe</SccProvider>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' ">
     <DebugSymbols>true</DebugSymbols>
