@@ -147,14 +147,16 @@
                     </StackLayout>
 
                     <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,10,0,0" >
-                        <Label x:Name="DriverIdLabel" Text="Driver Id: " FontSize="Medium" TextColor="Blue" WidthRequest="130" />
+                        <Label x:Name="DriverIdLabel" Text="Driver Id:" FontSize="Medium" TextColor="Blue" WidthRequest="80" />
                         <StackLayout x:Name="DriverIdEntryLayout" Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-10,0,0" >
-                            <Entry x:Name="DriverIdEntry" FontSize="Medium" TextColor="Green" WidthRequest="150"  />
+                            <Entry x:Name="DriverIdEntry" FontSize="Medium" TextColor="Green" WidthRequest="200"  />
                         </StackLayout>
                     </StackLayout>
 
+                    <BoxView HeightRequest="2" Color="#FF909090" />
+
                     <StackLayout Orientation="Horizontal" HorizontalOptions="Start" Padding="0,10,0,0" >
-                        <Label x:Name="ELDIntervalLabel" Text="ELD Interval: " FontSize="Medium" TextColor="Blue" WidthRequest="130" />
+                        <Label x:Name="ELDIntervalLabel" Text="ELD Interval:" FontSize="Medium" TextColor="Blue" WidthRequest="140" />
                         <StackLayout x:Name="ELDIntervalEntryLayout" Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-10,0,0" >
                             <Entry x:Name="ELDIntervalEntry" FontSize="Medium" TextColor="Green" WidthRequest="60" />
                         </StackLayout>
@@ -166,13 +168,15 @@
                         </StackLayout>
                     </StackLayout>
 
+                    <BoxView HeightRequest="2" Color="#FF909090" />
+
                     <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
                         <Label Text="Insert IFTA Records" FontSize="Medium" TextColor="Blue" WidthRequest="200" />
                         <Switch x:Name="IFTASwitch" />
                     </StackLayout>
 
                     <StackLayout x:Name="IFTAIntervalLayout" Orientation="Horizontal" HorizontalOptions="Start" Padding="0,10,0,0" >
-                        <Label x:Name="IFTAIntervalLabel" Text="IFTA Interval: " FontSize="Medium" TextColor="Blue" WidthRequest="130" />
+                        <Label x:Name="IFTAIntervalLabel" Text="IFTA Interval:" FontSize="Medium" TextColor="Blue" WidthRequest="140" />
                         <StackLayout x:Name="IFTAIntervalEntryLayout" Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-10,0,0" >
                             <Entry x:Name="IFTAIntervalEntry" FontSize="Medium" TextColor="Green" WidthRequest="60" />
                         </StackLayout>
@@ -184,13 +188,15 @@
                         </StackLayout>
                     </StackLayout>
 
+                    <BoxView HeightRequest="2" Color="#FF909090" />
+
                     <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
                         <Label Text="Insert Stats Records" FontSize="Medium" TextColor="Blue" WidthRequest="200" />
                         <Switch x:Name="StatsSwitch" />
                     </StackLayout>
 
                     <StackLayout x:Name="StatsIntervalLayout" Orientation="Horizontal" HorizontalOptions="Start" Padding="0,10,0,5" >
-                        <Label x:Name="StatsIntervalLabel" Text="Stats Interval: " FontSize="Medium" TextColor="Blue" WidthRequest="130" />
+                        <Label x:Name="StatsIntervalLabel" Text="Stats Interval:" FontSize="Medium" TextColor="Blue" WidthRequest="140" />
                         <StackLayout x:Name="StatsIntervalEntryLayout" Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-10,0,0" >
                             <Entry x:Name="StatsIntervalEntry" FontSize="Medium" TextColor="Green" WidthRequest="60" />
                         </StackLayout>
@@ -290,9 +296,9 @@
 
                     <!-- Buttons -->
                     <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
-                        <Button x:Name="StartELDButton" Text="Start Recording" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="StartELDButton_Clicked" />
-                        <Button x:Name="UploadELDButton" Text="Upload Records" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="UpdateELDButton_Clicked" />
-                        <Button x:Name="DeleteELDButton" Text="Delete Records" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="DeleteELDButton_Clicked" />
+                        <Button x:Name="StartELDButton" Text="Start" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="StartELDButton_Clicked" />
+                        <Button x:Name="UploadELDButton" Text="Upload" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="UpdateELDButton_Clicked" />
+                        <Button x:Name="DeleteELDButton" Text="Delete" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="DeleteELDButton_Clicked" />
                     </StackLayout>
 
                 </StackLayout>

@@ -51,12 +51,12 @@ namespace Demo
         private const String VINTitle = "VIN";
         private const String DriverIdTitle = "DriverId";
 
-        private const String StartTitle = "Start Recording";
-        private const String StopTitle = "Stop Recording";
+        private const String StartTitle = "Start";
+        private const String StopTitle = "Stop";
         private const String StreamLocalTitle = "Stream Locally";
         private const String StreamRecordTitle = "Stream and Record Locally";
-        private const String UploadRecordsTitle = "Upload Records";
-        private const String SaveRecordsTitle = "Save Records";
+        private const String UploadRecordsTitle = "Upload";
+        private const String SaveRecordsTitle = "Save";
 
         private Boolean DistanceShowNA = false;
         private Boolean OdometerShowNA = false;
@@ -183,15 +183,18 @@ namespace Demo
             // Security settings
             UserNameEntry.Text = "";
             PasswordEntry.Text = "";
-            UpdateButton.IsEnabled = false;
+
+            SecureAdapterSwitch.IsEnabled = false;
 
             // Proprietary PGNs
             PGNEntry.Text = "";
             PGNDataEntry.Text = "";
-            SendButton.IsEnabled = false;
 
             NextButton.IsEnabled = false;
             PrevButton.IsEnabled = false;
+
+            UpdateButton.IsEnabled = false;
+            SendButton.IsEnabled = false;
 
             // ELD settings
             DriverIdEntry.Text = ELD.DriverId;
@@ -503,10 +506,6 @@ namespace Demo
                     ShowStatus(State.ToString());
                     break;
             }
-
-            // Check reset button enable
-            if (!IsConnected)
-                ResetButton.IsEnabled = false; // because it can be enabled in ShowData
         }
 
     #endregion
@@ -557,6 +556,8 @@ namespace Demo
 
             ShowDisconnectButton();
 
+            SecureAdapterSwitch.IsEnabled = true;
+
             NextButton.IsEnabled = true;
             PrevButton.IsEnabled = true;
 
@@ -604,7 +605,12 @@ namespace Demo
             J1939Switch.IsEnabled = true;
             J1708Switch.IsEnabled = true;
 
-            UpdateButton.IsEnabled = true;
+            SecureAdapterSwitch.IsEnabled = false;
+
+            NextButton.IsEnabled = false;
+            PrevButton.IsEnabled = false;
+
+            UpdateButton.IsEnabled = false;
             SendButton.IsEnabled = false;
 
             ConnectButton.Focus();
@@ -616,6 +622,8 @@ namespace Demo
 
             IsConnected = false;
             IsConnecting = true;
+
+            SecureAdapterSwitch.IsEnabled = false;
 
             NextButton.IsEnabled = false;
             PrevButton.IsEnabled = false;
@@ -1878,6 +1886,14 @@ namespace Demo
         {
             ConnectButton.IsEnabled = false;
 
+            SecureAdapterSwitch.IsEnabled = false;
+
+            NextButton.IsEnabled = false;
+            PrevButton.IsEnabled = false;
+
+            UpdateButton.IsEnabled = false;
+            SendButton.IsEnabled = false;
+
             // Check for connecting
             if (IsConnectButton)
             {
@@ -1885,13 +1901,6 @@ namespace Demo
                 IsConnected = false;
 
                 ShowStatus("Connecting...");
-
-                NextButton.IsEnabled = false;
-                PrevButton.IsEnabled = false;
-
-                UpdateButton.IsEnabled = false;
-                ResetButton.IsEnabled = false;
-                SendButton.IsEnabled = false;
 
                 ClearMessage();
 
