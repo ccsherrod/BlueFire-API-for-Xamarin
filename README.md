@@ -70,7 +70,7 @@ Version 2.1:<ul>
     <li>ELD.IsStreaming no longer starts or stops streaming. Use Start/Stop Streaming methods.
 
 Version 2.2:<ul>
-	<li>Requires Adapter Firmware Beta 3.10.8.
+	<li>Requires Adapter Firmware Beta 3.10.9.
 	<li>ELD rules are sent to the Adapter from the API.
 	<li>The Adapter will reboot after ELD StopEngine if the API is not connected.
 

@@ -776,6 +776,9 @@ namespace Demo
             //RetrievalMethod = RetrievalMethods.Synchronized;
             //BlueFire.SyncTimeout = 2000; // default is 1000, only required if RetrievalMethod is Synchronized
 
+            // Clear any previous adapter data
+            await BlueFire.ClearData();
+
             switch (GroupNo)
             {
                 case 0:
@@ -877,7 +880,16 @@ namespace Demo
                     TextView6.Text = "";
                     TextView7.Text = "";
 
-                    await BlueFire.GetEngineVIN(RetrievalMethod, RetrievalInterval); // VIN
+                    Boolean retrievedVIN = false;
+                    BlueFire.SyncTimeout = 2000; // override default of one second
+                    int retryCount = 2;
+
+                    while (!retrievedVIN && retryCount > 0)
+                    {
+                        retrievedVIN = await BlueFire.GetEngineVIN(RetrievalMethods.Synchronized); // this will block
+                        await BlueFire.ClearData(); // this might help
+                        retryCount--;
+                    }
 
                     BlueFire.GetVehicleInfo(); // Make, Model, Serial No asynchronously
 
