@@ -19,10 +19,10 @@ using Xamarin.Forms.Xaml;
 [assembly: AssemblyConfiguration("")]
 
 //[assembly: AssemblyVersion("0.0.0")] // must use AssemblyFileVersion for compatibility with Windows UWP
-[assembly: AssemblyFileVersion("2.2.0")] // this needs to match the versionName in the Manifest and the iOS version
+[assembly: AssemblyFileVersion("2.2.1")] // this needs to match the versionName in the Manifest and the iOS version
 
-#if RELEASE
-[assembly: Application(Debuggable=false)]
-#else
+#if DEBUG
 [assembly: Application(Debuggable = true)]
+#else
+[assembly: Application(Debuggable = false)]
 #endif
