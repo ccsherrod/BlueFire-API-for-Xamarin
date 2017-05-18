@@ -72,5 +72,5 @@ Version 2.1:<ul>
 Version 2.2:<ul>
 	<li>Requires Adapter Firmware Beta 3.10.9.
 	<li>ELD rules are sent to the Adapter from the API.
-	<li>The Adapter will reboot after ELD StopEngine if the API is not connected.
+	<li>The Adapter will reboot after ELD StopEngine if the App is not connected.
 
