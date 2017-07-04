@@ -90,6 +90,7 @@ artifacts/
 *.tmp_proj
 *.log
 *.vspscc
+*.vsscc
 *.vssscc
 .builds
 *.pidb

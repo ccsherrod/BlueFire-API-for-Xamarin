@@ -10,7 +10,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Demo.iOS</RootNamespace>
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
-    <AssemblyName>Demo.iOS</AssemblyName>
+    <AssemblyName>DemoiOS</AssemblyName>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <SccProjectName>"%24/BlueFire/Xamarin/Xamarin/API/BlueFire-API-for-Xamarin", QVHBAAAA</SccProjectName>

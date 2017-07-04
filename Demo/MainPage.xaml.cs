@@ -15,7 +15,7 @@ namespace Demo
     #region Declaratives
 
         private Int32 GroupNo;
-        private const Int32 MaxGroupNo = 6;
+        private const Int32 MaxGroupNo = 7;
 
         private RetrievalMethods RetrievalMethod; 
         private Int32 RetrievalInterval;
@@ -149,6 +149,9 @@ namespace Demo
 
         private async void Initialize()
         {
+            // Connect button
+            IsConnectButton = true;
+
             // Keyboards
             LedBrightnessEntry.Keyboard = Keyboard.Numeric;
             PGNEntry.Keyboard = Keyboard.Numeric;
@@ -190,8 +193,8 @@ namespace Demo
             PGNEntry.Text = "";
             PGNDataEntry.Text = "";
 
-            NextButton.IsEnabled = false;
-            PrevButton.IsEnabled = false;
+            NextButton.IsVisible = false;
+            PrevButton.IsVisible = false;
 
             UpdateButton.IsEnabled = false;
             SendButton.IsEnabled = false;
@@ -226,9 +229,6 @@ namespace Demo
 
             // Or set the retrieval interval if using OnInterval.
             //RetrievalInterval = 1000; // default is BlueFire.MinInterval
-
-            // Show connect button
-            ShowConnectButton();
         }
 
     #endregion
@@ -554,12 +554,7 @@ namespace Demo
 
             ClearMessage();
 
-            ShowDisconnectButton();
-
             SecureAdapterSwitch.IsEnabled = true;
-
-            NextButton.IsEnabled = true;
-            PrevButton.IsEnabled = true;
 
             UpdateButton.IsEnabled = true;
             SendButton.IsEnabled = true;
@@ -607,9 +602,6 @@ namespace Demo
 
             SecureAdapterSwitch.IsEnabled = false;
 
-            NextButton.IsEnabled = false;
-            PrevButton.IsEnabled = false;
-
             UpdateButton.IsEnabled = false;
             SendButton.IsEnabled = false;
 
@@ -624,9 +616,6 @@ namespace Demo
             IsConnecting = true;
 
             SecureAdapterSwitch.IsEnabled = false;
-
-            NextButton.IsEnabled = false;
-            PrevButton.IsEnabled = false;
 
             UpdateButton.IsEnabled = false;
             SendButton.IsEnabled = false;
@@ -714,42 +703,7 @@ namespace Demo
             }
         }
 
-    #endregion
-
-    #region Show Truck Pages
-
-        private async Task ShowTruckPages(Boolean ShowPrevious = false)
-        {
-            if (!TruckLayout.IsVisible)
-            {
-                HideELDPage();
-                AdapterLayout.IsVisible = false;
-                TruckLayout.IsVisible = true;
-
-                GroupNo = -1; // so it increments to 0
-                ShowPrevious = false;
-            }
-
-            if (ShowPrevious)
-                GroupNo--;
-            else
-                GroupNo++;
-
-            if (GroupNo > MaxGroupNo) // Truck -> Adapter
-            {
-                ShowAdapterPage(); // Show Adapter page
-                return;
-            }
-            else if (GroupNo < 0)
-            {
-                ShowELDPage(); // Show ELD page
-                return;
-            }
-
-            await GetTruckData();
-        }
-
-    #endregion
+        #endregion
 
     #region Get Truck Data
 
@@ -880,22 +834,32 @@ namespace Demo
                     TextView6.Text = "";
                     TextView7.Text = "";
 
-                    Boolean retrievedVIN = false;
-                    BlueFire.SyncTimeout = 2000; // override default of one second
-                    int retryCount = 2;
-
-                    while (!retrievedVIN && retryCount > 0)
+                    if (!BlueFire.Truck.VINExists)
                     {
-                        retrievedVIN = await BlueFire.GetEngineVIN(RetrievalMethods.Synchronized); // this will block
-                        await BlueFire.ClearData(); // this might help
-                        retryCount--;
+                        DataView7.Text = "Retrieving VIN ...";
+                        await BlueFire.GetVehicleIdSync(); // VIN synchronously
+                                                           //await BlueFire.GetVehicleId(); // VIN asynchronously
                     }
 
-                    BlueFire.GetVehicleInfo(); // Make, Model, Serial No asynchronously
+                    if (!BlueFire.Truck.Engine.IdExists)
+                    {
+                        DataView7.Text = "Retrieving Vehicle Data ...";
+                        await BlueFire.GetVehicleData(); // Make, Model, Serial No asynchronously
+                    }
+
+                    break;
+
+                case 7:
+                    TextView1.Text = "Source";
+                    TextView2.Text = "SPN";
+                    TextView3.Text = "FMI";
+                    TextView4.Text = "Occurrence";
+                    TextView5.Text = "Conversion";
+                    TextView6.Text = "";
+                    TextView7.Text = "";
 
                     // Faults
-                    FaultLayout.IsVisible = true;
-                    BlueFire.GetFaults();
+                    await BlueFire.GetFaults();
 
                     break;
             }
@@ -970,28 +934,67 @@ namespace Demo
                     break;
 
                 case 6:
-                    DataView1.Text = BlueFire.Truck.VIN;
+                    DataView1.Text = BlueFire.Truck.EngineVIN;
                     DataView2.Text = BlueFire.Truck.Engine.Make;
                     DataView3.Text = BlueFire.Truck.Engine.Model;
                     DataView4.Text = BlueFire.Truck.Engine.SerialNo;
                     DataView5.Text = BlueFire.Truck.Engine.UnitNo;
+                    //DataView1.Text = BlueFire.Truck.CabBodyVIN;
+                    //DataView2.Text = BlueFire.Truck.CabBody.Make;
+                    //DataView3.Text = BlueFire.Truck.CabBody.Model;
+                    //DataView4.Text = BlueFire.Truck.CabBody.SerialNo;
+                    //DataView5.Text = BlueFire.Truck.CabBody.UnitNo;
+                    DataView6.Text = "";
+
+                    if (BlueFire.Truck.EngineVINExists && BlueFire.Truck.Engine.IdExists)
+                        DataView7.Text = "";
+
+                    break;
+
+                case 7:
+
+                    String Source = "";
+                    String SPN = "";
+                    String FMI = "";
+                    String Occurrence = "";
+                    String Conversion = "";
+
+                    FaultLayout.IsVisible = false;
+                    
+                    // Show truck faults
+                    if (BlueFire.Truck.ActiveFaultsCount > 0)
+                    {
+                        // Check if fault count changed
+                        if (FaultIndex >= BlueFire.Truck.ActiveFaultsCount)
+                            FaultIndex = BlueFire.Truck.ActiveFaultsCount - 1;
+
+                        Source = BlueFire.Faults.Items[FaultIndex].Source.ToString();
+                        SPN = BlueFire.Faults.Items[FaultIndex].SPN.ToString();
+                        FMI = BlueFire.Faults.Items[FaultIndex].FMI.ToString();
+                        Occurrence = BlueFire.Faults.Items[FaultIndex].Occurrence.ToString();
+                        Conversion = BlueFire.Faults.Items[FaultIndex].Conversion.ToString();
+
+                        FaultLayout.IsVisible = true;
+
+                        if (BlueFire.Truck.ActiveFaultsCount > 1)
+                            NextFaultButton.IsVisible = true;
+                        else
+                            NextFaultButton.IsVisible = false;
+                    }
+
+                    DataView1.Text = Source;
+                    DataView2.Text = SPN;
+                    DataView3.Text = FMI;
+                    DataView4.Text = Occurrence;
+                    DataView5.Text = Conversion;
                     DataView6.Text = "";
                     DataView7.Text = "";
+
                     break;
             }
-
-            // Show truck faults
-            if (BlueFire.Truck.ActiveFaultsCount == 0)
-            {
-                FaultText.Text = "NA";
-                ResetButton.IsEnabled = false;
-            }
-            else
-            {
-                FaultText.Text = BlueFire.Faults.Items[0].ToString();
-                ResetButton.IsEnabled = true;
-            }
         }
+
+        private Int32 FaultIndex = 0;
 
         private String FormatInt32(Int32 Data)
         {
@@ -1008,49 +1011,9 @@ namespace Demo
             return Math.Round(Data, Precision).ToString();
         }
 
-        #endregion
+    #endregion
 
     #region Show ELD Page
-
-        #region Show/Hide Page
-
-        private void ShowELDPage()
-        {
-            AdapterLayout.IsVisible = false;
-            TruckLayout.IsVisible = false;
-            ELDLayout.IsVisible = true;
-
-            ClearELDPage();
-
-            CheckStreaming();
-
-            if (!ELD.IsCompatibleAdapter)
-            {
-                ShowMessage("ELD is not available with your current adapter. You need to upgrade to firmware 3.10+");
-                return;
-            }
-
-            // Get current record
-            CurrentRecordNo = -1;
-
-            ELD.GetCurrentRecord();
-
-            SetELDButtons();
-        }
-
-        private void HideELDPage()
-        {
-            if (!ELDLayout.IsVisible)
-                return;
-
-            EditELDData();
-
-            ELDLayout.IsVisible = false;
-
-            OnELDPageDisappearing();
-        }
-
-        #endregion
 
         #region Clear ELD Page
 
@@ -1900,9 +1863,6 @@ namespace Demo
 
             SecureAdapterSwitch.IsEnabled = false;
 
-            NextButton.IsEnabled = false;
-            PrevButton.IsEnabled = false;
-
             UpdateButton.IsEnabled = false;
             SendButton.IsEnabled = false;
 
@@ -2017,17 +1977,7 @@ namespace Demo
             BlueFire.UpdateSecurity(SecureAdapter, UserName, Password);
         }
 
-    #endregion
-
-    #region Reset Button
-
-        // Fault Reset
-        private void ResetButton_Clicked(object sender, EventArgs e)
-        {
-            BlueFire.ResetFaults();
-        }
-
-    #endregion
+        #endregion
 
     #region Send Button
 
@@ -2086,9 +2036,55 @@ namespace Demo
             }
         }
 
+    #endregion
+
+    #region Next Fault Button
+
+        private void NextFaultButton_Clicked(object sender, EventArgs e)
+        {
+            FaultIndex++;
+            if (FaultIndex == BlueFire.Truck.ActiveFaultsCount)
+                FaultIndex = 0;
+        }
+
+    #endregion
+
+    #region Reset Fault Button
+
+        private async void ResetFaultButton_Clicked(object sender, EventArgs e)
+        {
+            await BlueFire.ResetFaults();
+        }
+
+    #endregion
+
+    #region Truck Button
+
+        // Truck Data
+        private async void TruckButton_Clicked(object sender, EventArgs e)
+        {
+            // Clear message
+            ClearMessage();
+
+            // Clear any previous adapter data retrieval
+            await BlueFire.ClearData();
+
+            HideELDPage();
+
+            AdapterLayout.IsVisible = false;
+            TruckLayout.IsVisible = true;
+
+            NextButton.IsVisible = true;
+            PrevButton.IsVisible = true;
+
+            GroupNo = 0; // so it increments to 0
+
+            await GetTruckData();
+        }
+
         #endregion
 
-    #region Next/Previous Buttons
+    #region Next/Prev Buttons
 
         // Next Truck Data
         private async void NextButton_Clicked(object sender, EventArgs e)
@@ -2099,16 +2095,8 @@ namespace Demo
             // Clear any previous adapter data retrieval
             await BlueFire.ClearData();
 
-            // Change pages
-
-            if (AdapterLayout.IsVisible) // Adapter -> ELD
-                ShowELDPage();
-
-            else if (ELDLayout.IsVisible) // ELD -> Truck
-                await ShowTruckPages();
-
-            else // Truck -> Adapter
-                await ShowTruckPages(); // ShowTruckPage will navigate to the Adapter page
+            // Show next page
+            await ShowTruckPages();
         }
 
         // Previous Truck Data
@@ -2120,16 +2108,91 @@ namespace Demo
             // Clear any previous adapter data retrieval
             await BlueFire.ClearData();
 
-            // Change pages
+            // Show previous pge
+            await ShowTruckPages(true);
+        }
 
-            if (ELDLayout.IsVisible) // ELD -> Adapter
-                ShowAdapterPage();
+    #region Show Truck Pages
 
-            else if (TruckLayout.IsVisible) // // ShowTruckPage will navigate to the ELD page
-                await ShowTruckPages(true);
+        private async Task ShowTruckPages(Boolean ShowPrevious = false)
+        {
+            if (ShowPrevious)
+                GroupNo--;
+            else
+                GroupNo++;
 
-            else // Adapter -> Truck
-                await ShowTruckPages(); 
+            if (GroupNo > MaxGroupNo)
+                GroupNo = 0;
+
+            else if (GroupNo < 0)
+                GroupNo = MaxGroupNo;
+
+            await GetTruckData();
+        }
+
+    #endregion
+
+    #endregion
+
+    #region ELD Button
+
+        // ELD Recording
+        private async void ELDButton_Clicked(object sender, EventArgs e)
+        {
+            // Clear message
+            ClearMessage();
+
+            // Clear any previous adapter data retrieval
+            await BlueFire.ClearData();
+
+            AdapterLayout.IsVisible = false;
+            TruckLayout.IsVisible = false;
+
+            NextButton.IsVisible = false;
+            PrevButton.IsVisible = false;
+
+            ShowELDPage();
+        }
+
+    #endregion
+
+    #region Show ELD Page
+
+        private void ShowELDPage()
+        {
+            AdapterLayout.IsVisible = false;
+            TruckLayout.IsVisible = false;
+
+            ELDLayout.IsVisible = true;
+
+            ClearELDPage();
+
+            CheckStreaming();
+
+            if (!ELD.IsCompatibleAdapter)
+            {
+                ShowMessage("ELD is not available with your current adapter.");
+                return;
+            }
+
+            // Get current record
+            CurrentRecordNo = -1;
+
+            ELD.GetCurrentRecord();
+
+            SetELDButtons();
+        }
+
+        private void HideELDPage()
+        {
+            if (!ELDLayout.IsVisible)
+                return;
+
+            EditELDData();
+
+            ELDLayout.IsVisible = false;
+
+            OnELDPageDisappearing();
         }
 
     #endregion

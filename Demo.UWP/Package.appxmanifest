@@ -34,5 +34,17 @@
   </Applications>
   <Capabilities>
     <DeviceCapability Name="bluetooth" />
+    <DeviceCapability Name="radios" />
+    <DeviceCapability Name="bluetooth.genericAttributeProfile">
+      <Device Id="any">
+        <Function Type="serviceId:B65D50EF-DB0A-4F24-9E32-189BF1D5F6D5" />
+        <Function Type="serviceId:1D7F10C5-A793-43D5-82B2-464A74E795BE" />
+      </Device>
+    </DeviceCapability>
+    <DeviceCapability Name="bluetooth.rfcomm">
+      <Device Id="any">
+        <Function Type="name:serialPort" />
+      </Device>
+    </DeviceCapability>
   </Capabilities>
 </Package>

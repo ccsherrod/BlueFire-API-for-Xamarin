@@ -49,11 +49,19 @@
         </StackLayout>
 
         <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+            
+            <!-- Truck Data Button -->
+            <Button x:Name="TruckButton" Text="Truck Data" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="TruckButton_Clicked" />
+
+            <!-- ELD Button -->
+            <Button x:Name="ELDButton" Text="ELD" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="ELDButton_Clicked" />
+            
             <!-- Next Button -->
-                <Button x:Name="NextButton" Text="Next Page" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="NextButton_Clicked" />
+            <Button x:Name="NextButton" Text="Next Page" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="NextButton_Clicked" />
 
             <!-- Previous Button -->
-                <Button x:Name="PrevButton" Text="Prev Page" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="PrevButton_Clicked" />
+            <Button x:Name="PrevButton" Text="Prev Page" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="PrevButton_Clicked" />
+            
         </StackLayout>
 
         <!-- Message -->
@@ -356,20 +364,14 @@
 
                     <StackLayout x:Name="FaultLayout" Orientation="Vertical" VerticalOptions="FillAndExpand">
 
-                        <!-- Adapter Faults -->
-                        <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
-                            <Label Text="Adapter Faults" FontSize="Medium" FontAttributes="Bold" TextColor="Orange" />
-                        </StackLayout>
-
-                        <!-- Fault -->
-                        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
-                            <Label Text="Fault" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
-                            <Label x:Name="FaultText" FontSize="Medium" TextColor="Green" />
+                        <!-- Next Button -->
+                        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                            <Button x:Name="NextFaultButton" Text="Next Fault" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="NextFaultButton_Clicked" />
                         </StackLayout>
 
                         <!-- Reset Button -->
                         <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
-                            <Button x:Name="ResetButton" Text="Reset" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="ResetButton_Clicked" />
+                            <Button x:Name="ResetFaultButton" Text="Reset Fault" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="ResetFaultButton_Clicked" />
                         </StackLayout>
 
                         <BoxView HeightRequest="2" Color="#FF909090" />

@@ -74,3 +74,13 @@ Version 2.2:<ul>
 	<li>ELD rules are sent to the Adapter from the API.
 	<li>The Adapter will reboot after ELD StopEngine if the App is not connected.
 
+Version 2.3:<ul>
+	<li>Compatible with Adapter Firmware 3.11. Note, Firmware 3.10 is broken and must be updated to 3.11.
+	<li>Changed property VIN to EngineVIN.
+	<li>Added property CabBodyVIN.
+	<li>Added properties CabBody.Make, Model, SerialNo, and UnitNo.
+	<li>Renamed method GetEngineVIN to GetVehicleId and removed all parameters. This method will retrieve the VIN asynchronously.
+	<li>Added a GetVehicleIdSync method for retrieving the VIN synchronously.
+	<li>Added property AdvertisementTimeout.
+	<li>For BLE adapters, if the ConnectToLastAdapter and UpdateSecurity (SecureAdapter) are not set, the API will connect to the adapter with the strongest signal.
+	<li>Uses the latest BlueFire 4.7 core libraries.
