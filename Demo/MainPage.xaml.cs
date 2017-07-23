@@ -756,20 +756,34 @@ namespace Demo
 
                 case 1:
                     TextView1.Text = "Distance";
-                    TextView2.Text = "Odometer";
-                    TextView3.Text = "Total Hours";
-                    TextView4.Text = "Idle Hours";
-                    TextView5.Text = "Brake Pres";
-                    TextView6.Text = "Brake Air";
-                    TextView7.Text = "";
+                    TextView2.Text = "     HiRes";
+                    TextView3.Text = "     LoRes";
+                    TextView4.Text = "";
+                    TextView5.Text = "Odometer";
+                    TextView6.Text = "     HiRes";
+                    TextView7.Text = "     LoRes";
 
-                    await BlueFire.GetOdometer(RetrievalMethod, RetrievalInterval); // Odometer (Engine Distance)
-                    await BlueFire.GetBrakeData(RetrievalMethod, RetrievalInterval); // Application Pressure, Primary Pressure, Secondary Pressure
-                    await BlueFire.GetEngineHours(RetrievalMethod, RetrievalInterval); // Total Engine Hours, Total Idle Hours
+                    await BlueFire.GetDistance(RetrievalMethod, RetrievalInterval); // Distance and Odometer
 
                     break;
 
                 case 2:
+                    TextView1.Text = "Total Hours";
+                    TextView2.Text = "Idle Hours";
+                    TextView3.Text = "Brake Pres";
+                    TextView4.Text = "Brake Air";
+                    TextView5.Text = "Current Gear";
+                    TextView6.Text = "Selected Gear";
+                    TextView7.Text = "Battery Volts";
+
+                    await BlueFire.GetBrakeData(RetrievalMethod, RetrievalInterval); // Application Pressure, Primary Pressure, Secondary Pressure
+                    await BlueFire.GetEngineHours(RetrievalMethod, RetrievalInterval); // Total Engine Hours, Total Idle Hours
+                    await BlueFire.GetTransmissionGears(RetrievalMethod, RetrievalInterval); // Selected and Current Gears
+                    await BlueFire.GetBatteryVoltage(RetrievalMethod, RetrievalInterval); // Battery Voltage
+
+                    break;
+
+                case 3:
                     TextView1.Text = "Fuel Rate";
                     TextView2.Text = "Fuel Used";
                     TextView3.Text = "HiRes Fuel";
@@ -782,7 +796,7 @@ namespace Demo
 
                     break;
 
-                case 3:
+                case 4:
                     TextView1.Text = "Oil Temp";
                     TextView2.Text = "Oil Pressure";
                     TextView3.Text = "Intake Temp";
@@ -797,31 +811,16 @@ namespace Demo
 
                     break;
 
-                case 4:
+                case 5:
                     TextView1.Text = "Brake Switch";
                     TextView2.Text = "Clutch Switch";
                     TextView3.Text = "Park Switch";
                     TextView4.Text = "Cruise Switch";
                     TextView5.Text = "Cruise State";
                     TextView6.Text = "Cruise Speed";
-                    TextView7.Text = "";
+                    TextView7.Text = "Max Speed";
 
                     await BlueFire.GetEngineData3(RetrievalMethod, RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
-
-                    break;
-
-                case 5:
-                    TextView1.Text = "Max Speed";
-                    TextView2.Text = "HiRes Max";
-                    TextView3.Text = "Current Gear";
-                    TextView4.Text = "Selected Gear";
-                    TextView5.Text = "Battery Volts";
-                    TextView6.Text = "";
-                    TextView7.Text = "";
-
-                    await BlueFire.GetEngineData3(RetrievalMethod, RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
-                    await BlueFire.GetBatteryVoltage(RetrievalMethod, RetrievalInterval); // Battery Voltage
-                    await BlueFire.GetTransmissionGears(RetrievalMethod, RetrievalInterval); // Selected and Current Gears
 
                     break;
 
@@ -885,15 +884,25 @@ namespace Demo
 
                 case 1:
                     DataView1.Text = FormatSingle(BlueFire.Truck.Distance, 0);
-                    DataView2.Text = FormatSingle(BlueFire.Truck.Odometer, 0); // HiRes Distance
-                    DataView3.Text = FormatSingle(BlueFire.Truck.TotalHours, 2);
-                    DataView4.Text = FormatSingle(BlueFire.Truck.IdleHours, 2);
-                    DataView5.Text = FormatSingle(BlueFire.Truck.BrakeApplicationPressure, 2);
-                    DataView6.Text = FormatSingle(BlueFire.Truck.Brake1AirPressure, 2);
-                    DataView7.Text = "";
+                    DataView2.Text = FormatSingle(BlueFire.Truck.HiResDistance, 0);
+                    DataView3.Text = FormatSingle(BlueFire.Truck.LoResDistance, 0);
+                    DataView4.Text = "";
+                    DataView5.Text = FormatSingle(BlueFire.Truck.Odometer, 0); 
+                    DataView6.Text = FormatSingle(BlueFire.Truck.HiResOdometer, 0); 
+                    DataView7.Text = FormatSingle(BlueFire.Truck.LoResOdometer, 0); 
                     break;
 
                 case 2:
+                    DataView1.Text = FormatSingle(BlueFire.Truck.TotalHours, 2);
+                    DataView2.Text = FormatSingle(BlueFire.Truck.IdleHours, 2);
+                    DataView3.Text = FormatSingle(BlueFire.Truck.BrakeApplicationPressure, 2);
+                    DataView4.Text = FormatSingle(BlueFire.Truck.Brake1AirPressure, 2);
+                    DataView5.Text = FormatInt32(BlueFire.Truck.TransCurrentGear);
+                    DataView6.Text = FormatInt32(BlueFire.Truck.TransSelectedGear);
+                    DataView7.Text = FormatSingle(BlueFire.Truck.BatteryPotential, 2);
+                    break;
+
+                case 3:
                     DataView1.Text = FormatSingle(BlueFire.Truck.FuelRate, 2);
                     DataView2.Text = FormatSingle(BlueFire.Truck.TotalFuelUsed, 2);
                     DataView3.Text = FormatSingle(BlueFire.Truck.HiResFuelUsed, 2);
@@ -903,7 +912,7 @@ namespace Demo
                     DataView7.Text = FormatSingle(BlueFire.Truck.ThrottlePos, 2);
                     break;
 
-                case 3:
+                case 4:
                     DataView1.Text = FormatSingle(BlueFire.Truck.OilTemp, 2);
                     DataView2.Text = FormatSingle(BlueFire.Truck.OilPressure, 2);
                     DataView3.Text = FormatSingle(BlueFire.Truck.IntakeTemp, 2);
@@ -913,24 +922,17 @@ namespace Demo
                     DataView7.Text = FormatSingle(BlueFire.Truck.CoolantLevel, 2);
                     break;
 
-                case 4:
+                case 5:
                     DataView1.Text = BlueFire.Truck.BrakeSwitch.ToString();
                     DataView2.Text = BlueFire.Truck.ClutchSwitch.ToString();
                     DataView3.Text = BlueFire.Truck.ParkBrakeSwitch.ToString();
                     DataView4.Text = BlueFire.Truck.CruiseSwitch.ToString();
                     DataView5.Text = BlueFire.Truck.CruiseState.ToString();
                     DataView6.Text = FormatSingle(BlueFire.Truck.CruiseSpeed, 0);
-                    DataView7.Text = "";
-                    break;
-
-                case 5:
-                    DataView1.Text = FormatSingle(BlueFire.Truck.MaxSpeed, 0);
-                    DataView2.Text = FormatSingle(BlueFire.Truck.HiResMaxSpeed, 0);
-                    //DataView3.Text = FormatInt32(BlueFire.Truck.CurrentGear);
-                    //DataView4.Text = FormatInt32(BlueFire.Truck.SelectedGear);
-                    DataView5.Text = FormatSingle(BlueFire.Truck.BatteryPotential, 2);
-                    DataView6.Text = "";
-                    DataView7.Text = "";
+                    Single MaxSpeed = BlueFire.Truck.MaxSpeed;
+                    if (BlueFire.Truck.HiResMaxSpeed > 0)
+                        MaxSpeed = BlueFire.Truck.HiResMaxSpeed;
+                    DataView7.Text = FormatSingle(MaxSpeed, 0);
                     break;
 
                 case 6:

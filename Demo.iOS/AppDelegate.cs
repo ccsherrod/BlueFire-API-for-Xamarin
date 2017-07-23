@@ -66,7 +66,7 @@ namespace Demo.iOS
         {
             API.IsTerminating = true;
 
-            API.RaiseAppEvent(API.AppEventIds.IsTerminating);
+            API.RaiseAppEvent(AppEventIds.IsTerminating);
         }
     }
 }

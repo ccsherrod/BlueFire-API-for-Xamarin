@@ -56,7 +56,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9C04D581-7C0D-4441-BC31-0D5583B67D60}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		..\..\..\..\..\..\Users\Mark\Documents\BlueFire\API\Xamarin\BlueFire Xamarin API v2.2.docx = ..\..\..\..\..\..\Users\Mark\Documents\BlueFire\API\Xamarin\BlueFire Xamarin API v2.2.docx
+		..\..\..\..\..\..\Users\Mark\Documents\BlueFire\API\Xamarin\BlueFire Xamarin API v2.3.docx = ..\..\..\..\..\..\Users\Mark\Documents\BlueFire\API\Xamarin\BlueFire Xamarin API v2.3.docx
 		README.md = README.md
 	EndProjectSection
 EndProject

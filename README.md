@@ -84,3 +84,13 @@ Version 2.3:<ul>
 	<li>Added property AdvertisementTimeout.
 	<li>For BLE adapters, if the ConnectToLastAdapter and UpdateSecurity (SecureAdapter) are not set, the API will connect to the adapter with the strongest signal.
 	<li>Uses the latest BlueFire 4.7 core libraries.
+
+Version 2.4:<ul>
+	<li>Added method GetDistance which is the same as GetOdometer (GetOdometer actually calls GetDistance).
+	<li>Added properties Truck.HiResDistance, LoResDistance, HiResOdometer, and LoResOdometer.
+	<li>Truck.Odometer will return -1 if the OEM distance is not available (e.g. Volvo trucks).
+	<li>Truck.Distance and Truck.Odometer returns the hi-resolution value unless it is not available in which case it returns the lo-resolution value.
+	<li>Note that hi-resolution distance is at a 1 second ECM refresh rate while lo-resolution is at a 100 ms ECM refresh rate.
+	<li>Modified the Demo app to reflect the above changes.
+	<li>Fixed issue with API attempting to reconnect when disconnecting immediately after connecting.
+	<li>Uses the latest BlueFire 4.8 core libraries.
