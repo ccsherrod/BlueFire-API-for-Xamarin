@@ -86,6 +86,8 @@ Version 2.3:<ul>
 	<li>Uses the latest BlueFire 4.7 core libraries.
 
 Version 2.4:<ul>
+	<li>Added a Service class that simulates the API used with a service.
+	<li>Added Start and Stop Service buttons to the Demo app.
 	<li>Added method GetDistance which is the same as GetOdometer (GetOdometer actually calls GetDistance).
 	<li>Added properties Truck.HiResDistance, LoResDistance, HiResOdometer, and LoResOdometer.
 	<li>Truck.Odometer will return -1 if the OEM distance is not available (e.g. Volvo trucks).

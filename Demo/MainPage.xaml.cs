@@ -14,6 +14,8 @@ namespace Demo
 
     #region Declaratives
 
+        private Service DemoService;
+
         private Int32 GroupNo;
         private const Int32 MaxGroupNo = 7;
 
@@ -145,6 +147,8 @@ namespace Demo
             StatsIntervalLabel.WidthRequest *= 1.2;
             StatsIntervalEntry.WidthRequest *= 1.2;
 #endif
+            StartServiceButton.IsEnabled = true;
+            StopServiceButton.IsEnabled = false;
         }
 
         private async void Initialize()
@@ -1863,6 +1867,9 @@ namespace Demo
         {
             ConnectButton.IsEnabled = false;
 
+            StartServiceButton.IsEnabled = false;
+            StopServiceButton.IsEnabled = false;
+
             SecureAdapterSwitch.IsEnabled = false;
 
             UpdateButton.IsEnabled = false;
@@ -1901,13 +1908,17 @@ namespace Demo
         {
             IsConnectButton = true;
             ConnectButton.Text = "Connect";
+
             ConnectButton.IsEnabled = true;
+            StartServiceButton.IsEnabled = true;
+            StopServiceButton.IsEnabled = true;
         }
 
         private void ShowDisconnectButton()
         {
             IsConnectButton = false;
             ConnectButton.Text = "Disconnect";
+
             ConnectButton.IsEnabled = true;
         }
 
@@ -1938,6 +1949,41 @@ namespace Demo
                     AdapterNotConnected();
                     break;
             }
+        }
+
+        #endregion
+
+    #region Service Buttons
+
+        private async void StartServiceButton_Clicked(object sender, EventArgs e)
+        {
+            if (DemoService == null)
+            {
+                DemoService = new Service();
+            }
+            await DemoService.StartService();
+
+            StartServiceButton.IsEnabled = false;
+            StopServiceButton.IsEnabled = true;
+
+            ConnectButton.IsEnabled = false;
+            UpdateButton.IsEnabled = false;
+            SendButton.IsEnabled = false;
+        }
+
+        private async void StopServiceButton_Clicked(object sender, EventArgs e)
+        {
+            if (DemoService == null)
+                return;
+
+            await DemoService.StopService();
+
+            StartServiceButton.IsEnabled = true;
+            StopServiceButton.IsEnabled = false;
+
+            ConnectButton.IsEnabled = true;
+            UpdateButton.IsEnabled = true;
+            SendButton.IsEnabled = true;
         }
 
     #endregion
@@ -2197,7 +2243,7 @@ namespace Demo
             OnELDPageDisappearing();
         }
 
-    #endregion
+        #endregion
 
     #region Log Error
 
@@ -2243,6 +2289,9 @@ namespace Demo
 
         public async Task EndApplicationUI()
         {
+            if (DemoService != null)
+                await DemoService.Dispose();
+
             // Set switch settings
             BlueFire.UseBLE = BLESwitch.IsToggled;
             BlueFire.UseBT2 = BT2Switch.IsToggled;

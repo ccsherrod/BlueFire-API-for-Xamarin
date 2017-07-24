@@ -48,6 +48,12 @@
             </StackLayout>
         </StackLayout>
 
+        <!-- Service Buttons -->
+        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+            <Button x:Name="StartServiceButton" Text="Start Service" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="StartServiceButton_Clicked" />
+            <Button x:Name="StopServiceButton" Text="Stop Service" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="StopServiceButton_Clicked" />
+        </StackLayout>
+
         <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
             
             <!-- Truck Data Button -->
