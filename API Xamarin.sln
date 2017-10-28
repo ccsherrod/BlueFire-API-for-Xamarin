@@ -56,7 +56,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9C04D581-7C0D-4441-BC31-0D5583B67D60}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		BlueFire Xamarin API v2.3.docx = BlueFire Xamarin API v2.3.docx
+		..\..\..\..\..\..\Users\Mark\Documents\BlueFire\API\Xamarin\BlueFire Xamarin API v3.0.docx = ..\..\..\..\..\..\Users\Mark\Documents\BlueFire\API\Xamarin\BlueFire Xamarin API v3.0.docx
 		README.md = README.md
 	EndProjectSection
 EndProject
@@ -427,7 +427,7 @@ Global
 		{2082E21D-900C-45B1-B025-2E3F29EA8439} = {97DCF828-2F87-463C-AA17-E94F551D8D41}
 	EndGlobalSection
 	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 16
+		SccNumberOfProjects = 14
 		SccProjectName0 = \u0022$/BlueFire/Xamarin/Xamarin/API/BlueFire-API-for-Xamarin\u0022,\u0020
 		SccLocalPath0 = .
 		SccProvider0 = MSSCCI:Microsoft\u0020Visual\u0020SourceSafe
@@ -474,14 +474,8 @@ Global
 		SccProjectUniqueName12 = ..\\..\\..\\Shared\\Library\\Non-Universal.projitems
 		SccProjectName12 = \u0022$/BlueFire/Xamarin/Shared/Library\u0022,\u0020RVQAAAAA
 		SccLocalPath12 = ..\\..\\..\\Shared\\Library
-		SccProjectUniqueName13 = ..\\..\\..\\Shared\\Library\\iOS.projitems
+		SccProjectUniqueName13 = ..\\..\\..\\Shared\\Library\\Android.projitems
 		SccProjectName13 = \u0022$/BlueFire/Xamarin/Shared/Library\u0022,\u0020RVQAAAAA
 		SccLocalPath13 = ..\\..\\..\\Shared\\Library
-		SccProjectUniqueName14 = ..\\..\\..\\Shared\\Library\\Android.projitems
-		SccProjectName14 = \u0022$/BlueFire/Xamarin/Shared/Library\u0022,\u0020RVQAAAAA
-		SccLocalPath14 = ..\\..\\..\\Shared\\Library
-		SccProjectUniqueName15 = ..\\..\\..\\Shared\\Library\\Universal.projitems
-		SccProjectName15 = \u0022$/BlueFire/Xamarin/Shared/Library\u0022,\u0020RVQAAAAA
-		SccLocalPath15 = ..\\..\\..\\Shared\\Library
 	EndGlobalSection
 EndGlobal

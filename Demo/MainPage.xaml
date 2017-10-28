@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:Demo"
              x:Class="Demo.MainPage">
-    
+
     <StackLayout Orientation="Vertical" VerticalOptions="FillAndExpand">
 
         <StackLayout x:Name="TitleLayout" Orientation="Horizontal" HorizontalOptions="Center">
@@ -12,74 +12,71 @@
 
         <BoxView HeightRequest="2" Color="#FF909090" />
 
-        <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
-            <Label Text="Adapter Connection" FontSize="Medium" FontAttributes="Bold" TextColor="Orange" />
-        </StackLayout>
-
-        <!-- Adapter -->
-        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
-            <Label Text="Adapter" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
-            <Label Text="BT2.1" FontSize="Medium" TextColor="Blue" />
-            <Switch x:Name="BT2Switch" />
-            <Label Text="BLE" FontSize="Medium" TextColor="Blue" />
-            <Switch x:Name="BLESwitch" />
-        </StackLayout>
-
-        <!-- Data Bus -->
-        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
-            <Label Text="Data Bus" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
-            <Label Text="J1939" FontSize="Medium" TextColor="Blue" />
-            <Switch x:Name="J1939Switch" />
-            <Label Text="J1708" FontSize="Medium" TextColor="Blue" />
-            <Switch x:Name="J1708Switch" />
-        </StackLayout>
-
-        <!-- Status -->
-        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
-            <Label Text="Status" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
-            <Label x:Name="StatusText" FontSize="Medium" TextColor="Green" />
-        </StackLayout>
-
-        <!-- Connect Button -->
-        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
-            <Button x:Name="ConnectButton" Text="Connect" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="ConnectButton_Clicked" />
-            <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,10,0,0" >
-                <Label x:Name="KeyStateText" Text="Key Off" FontSize="Medium" TextColor="Green" />
-            </StackLayout>
-        </StackLayout>
-
-        <!-- Service Buttons -->
-        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
-            <Button x:Name="StartServiceButton" Text="Start Service" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="StartServiceButton_Clicked" />
-            <Button x:Name="StopServiceButton" Text="Stop Service" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="StopServiceButton_Clicked" />
-        </StackLayout>
-
-        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
-            
-            <!-- Truck Data Button -->
-            <Button x:Name="TruckButton" Text="Truck Data" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="TruckButton_Clicked" />
-
-            <!-- ELD Button -->
-            <Button x:Name="ELDButton" Text="ELD" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="ELDButton_Clicked" />
-            
-            <!-- Next Button -->
-            <Button x:Name="NextButton" Text="Next Page" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="NextButton_Clicked" />
-
-            <!-- Previous Button -->
-            <Button x:Name="PrevButton" Text="Prev Page" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="PrevButton_Clicked" />
-            
-        </StackLayout>
-
-        <!-- Message -->
-        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
-            <Label x:Name="MessageText" FontSize="Medium" TextColor="Red" IsVisible="false" />
-        </StackLayout>
-
-        <BoxView HeightRequest="2" Color="#FF909090" />
-
         <ScrollView Orientation="Vertical" VerticalOptions="StartAndExpand" IsClippedToBounds="true">
 
             <StackLayout Orientation="Vertical" >
+
+                <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
+                    <Label Text="Adapter Connection" FontSize="Medium" FontAttributes="Bold" TextColor="Orange" />
+                </StackLayout>
+
+                <!-- Adapter -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
+                    <Label Text="Adapter" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
+                    <Label Text="BT2.1" FontSize="Medium" TextColor="Blue" />
+                    <Switch x:Name="BT2Switch" />
+                    <Label Text="BLE" FontSize="Medium" TextColor="Blue" />
+                    <Switch x:Name="BLESwitch" />
+                </StackLayout>
+
+                <!-- Data Bus -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                    <Label Text="Data Bus" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
+                    <Label Text="J1939" FontSize="Medium" TextColor="Blue" />
+                    <Switch x:Name="J1939Switch" />
+                    <Label Text="J1708" FontSize="Medium" TextColor="Blue" />
+                    <Switch x:Name="J1708Switch" />
+                </StackLayout>
+
+                <!-- Status -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                    <Label Text="Status" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
+                    <Label x:Name="StatusText" FontSize="Medium" TextColor="Green" />
+                </StackLayout>
+
+                <!-- Connect Button -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                    <Button x:Name="ConnectButton" Text="Connect" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="ConnectButton_Clicked" />
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,10,0,0" >
+                        <Label x:Name="KeyStateText" Text="Key Off" FontSize="Medium" TextColor="Green" />
+                    </StackLayout>
+                </StackLayout>
+
+                <!-- Service Buttons -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                    <Button x:Name="StartServiceButton" Text="Start Service" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="StartServiceButton_Clicked" />
+                    <Button x:Name="StopServiceButton" Text="Stop Service" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="StopServiceButton_Clicked" />
+                </StackLayout>
+
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+
+                    <!-- Truck Data Button -->
+                    <Button x:Name="TruckButton" Text="Truck Data" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="TruckButton_Clicked" />
+
+                    <!-- ELD Button -->
+                    <Button x:Name="ELDButton" Text="ELD" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="ELDButton_Clicked" />
+
+                    <!-- Stress Test Button -->
+                    <Button x:Name="StressTestButton" Text="Stress Test" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="StressTestButton_Clicked" />
+
+                </StackLayout>
+
+                <!-- Message -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
+                    <Label x:Name="MessageText" FontSize="Medium" TextColor="Red" IsVisible="false" />
+                </StackLayout>
+
+                <BoxView HeightRequest="2" Color="#FF909090" />
 
                 <StackLayout x:Name="AdapterLayout" Orientation="Vertical" IsVisible="True" >
 
@@ -87,6 +84,14 @@
                     <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
                         <Label Text="Adapter Settings" FontSize="Medium" FontAttributes="Bold" TextColor="Orange" />
                     </StackLayout>
+
+                    <!-- Connect to Last Adapter -->
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
+                        <Label Text="Connect to Last Adapter" FontSize="Medium" TextColor="Blue" WidthRequest="260" />
+                        <Switch x:Name="ConnectLastAdapterSwitch" />
+                    </StackLayout>
+
+                    <BoxView HeightRequest="2" Color="#FF909090" />
 
                     <!-- Led Brightness -->
                     <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,5,0,0" >
@@ -96,9 +101,15 @@
                         </StackLayout>
                     </StackLayout>
 
+                    <!-- Secure Device -->
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
+                        <Label Text="Secure Device" FontSize="Medium" TextColor="Blue" WidthRequest="160" />
+                        <Switch x:Name="SecureDeviceSwitch" />
+                    </StackLayout>
+
                     <!-- Secure Adapter -->
                     <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
-                        <Label Text="Secure the Adapter" FontSize="Medium" TextColor="Blue" WidthRequest="200" />
+                        <Label Text="Secure Adapter" FontSize="Medium" TextColor="Blue" WidthRequest="160" />
                         <Switch x:Name="SecureAdapterSwitch" />
                     </StackLayout>
 
@@ -151,6 +162,8 @@
                         <Button x:Name="SendButton" Text="Send" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="SendButton_Clicked" />
                     </StackLayout>
 
+                    <BoxView HeightRequest="2" Color="#FF909090" />
+
                 </StackLayout>
 
                 <StackLayout x:Name="ELDLayout" Orientation="Vertical" IsVisible="False">
@@ -182,11 +195,9 @@
                         </StackLayout>
                     </StackLayout>
 
-                    <BoxView HeightRequest="2" Color="#FF909090" />
-
                     <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
                         <Label Text="Insert IFTA Records" FontSize="Medium" TextColor="Blue" WidthRequest="200" />
-                        <Switch x:Name="IFTASwitch" />
+                        <Switch x:Name="IFTASwitch" Toggled="IFTASwitch_Toggled" />
                     </StackLayout>
 
                     <StackLayout x:Name="IFTAIntervalLayout" Orientation="Horizontal" HorizontalOptions="Start" Padding="0,10,0,0" >
@@ -202,11 +213,9 @@
                         </StackLayout>
                     </StackLayout>
 
-                    <BoxView HeightRequest="2" Color="#FF909090" />
-
                     <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
                         <Label Text="Insert Stats Records" FontSize="Medium" TextColor="Blue" WidthRequest="200" />
-                        <Switch x:Name="StatsSwitch" />
+                        <Switch x:Name="StatsSwitch" Toggled="StatsSwitch_Toggled" />
                     </StackLayout>
 
                     <StackLayout x:Name="StatsIntervalLayout" Orientation="Horizontal" HorizontalOptions="Start" Padding="0,10,0,5" >
@@ -386,9 +395,20 @@
 
                 </StackLayout>
 
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+
+                    <!-- Previous Button -->
+                    <Button x:Name="PrevButton" Text="Prev Page" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="PrevButton_Clicked" />
+
+                    <!-- Next Button -->
+                    <Button x:Name="NextButton" Text="Next Page" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="NextButton_Clicked" />
+
+                </StackLayout>
+
             </StackLayout>
 
         </ScrollView>
+        
     </StackLayout>
 
 </ContentPage>

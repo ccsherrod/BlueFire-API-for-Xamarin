@@ -15,15 +15,17 @@ namespace Demo
 
         private API BlueFire;
 
-        private event API.EventHandler APIDataHandlerEvent;
+        private event API.EventHandler APIHandlerEvent;
 
         private ConnectionStates ConnectionState = ConnectionStates.NotConnected;
 
         private Int32 GroupNo;
         private const Int32 MaxGroupNo = 7;
 
+        private JPIDs[] Pids; // for sending J1939/J1587 Pids to the adapter
+
         private Int32 RetrievalInterval;
-        private RetrievalMethods RetrievalMethod;
+        private RequestTypes RequestType;
 
         private Boolean IsConnected;
         private Boolean IsConnecting;
@@ -45,9 +47,9 @@ namespace Demo
 
         public Service()
         {
-            APIDataHandlerEvent += new API.EventHandler(DataEventHandler);
+            APIHandlerEvent += new API.EventHandler(APIEventHandler);
 
-            BlueFire = new API(APIDataHandlerEvent, null);
+            BlueFire = new API(APIHandlerEvent, null);
         }
 
     #endregion
@@ -90,7 +92,7 @@ namespace Demo
             await BlueFire.Initialize();
 
             // Clear adapter id filter
-            BlueFire.AdapterIdFilter.Clear();
+            BlueFire.DeviceAddressFilter.Clear();
 
             // Set initial Bluetooth discovery timeout.
             // Note, this will be adjusted by the API after a connection is made.
@@ -99,8 +101,11 @@ namespace Demo
             // Instruct the API not to do any reconnections
             //BlueFire.MaxReconnectAttempts = 0;
 
-            // Set performance mode if need to
-            //BlueFire.PerformanceMode = true;
+            BlueFire.ConnectLastAdapter = false;
+            BlueFire.IsNotificationsOn = false;
+            BlueFire.IsPerformanceModeOn = false;
+
+            BlueFire.OptimizeDataRetrieval = true; // recommended
 
             // Set Bluetooth settings
             BlueFire.UseBT2 = false;
@@ -109,14 +114,6 @@ namespace Demo
             // Set adapter databus settings
             BlueFire.IgnoreJ1939 = false;
             BlueFire.IgnoreJ1708 = true;
-
-            // Set data retrieval method for testing.
-            //RetrievalMethod = RetrievalMethods.OnChange;
-            RetrievalMethod = RetrievalMethods.OnInterval;
-            //RetrievalMethod = RetrievalMethods.Synchronized;
-
-            // Or set the retrieval interval if using OnInterval.
-            //RetrievalInterval = 1000; // default is BlueFire.MinInterval
         }
 
     #endregion
@@ -130,10 +127,7 @@ namespace Demo
 
             WriteLog("Connecting...");
 
-            Boolean Synchronized = true; // test synchronized connection
-            //BlueFire.ConnectTimeout = 2000; // default is 1000 (one second)
-
-            await BlueFire.Connect(Synchronized);
+            await BlueFire.Connect();
         }
 
         private async Task Disconnect()
@@ -151,15 +145,13 @@ namespace Demo
                 case ConnectionStates.Discovering:
                 case ConnectionStates.Connecting:
                 case ConnectionStates.Reconnecting:
-                case ConnectionStates.Ready:
+                case ConnectionStates.Authenticated:
                     await BlueFire.CancelConnecting();
                     break;
 
                 // Check for already connected
-                case ConnectionStates.Connected:
                 case ConnectionStates.Reconnected:
                 case ConnectionStates.Authenticating:
-                case ConnectionStates.Authenticated:
                 case ConnectionStates.RetrievingData:
                 case ConnectionStates.DataAvailable:
                     await BlueFire.Disconnect(WaitForDisconnect);
@@ -172,11 +164,11 @@ namespace Demo
             }
         }
 
-    #endregion
+        #endregion
 
-    #region Data Event Handler
+    #region API Event Handler
 
-        private async void DataEventHandler(ConnectionStates State)
+        private async void APIEventHandler(ConnectionStates State)
         {
             ConnectionState = State;
 
@@ -185,9 +177,7 @@ namespace Demo
                 case ConnectionStates.Initializing:
                 case ConnectionStates.Initialized:
                 case ConnectionStates.Discovering:
-                case ConnectionStates.Connected:
                 case ConnectionStates.Authenticating:
-                case ConnectionStates.Authenticated:
                 case ConnectionStates.RetrievingData:
                 case ConnectionStates.Disconnecting:
                     LogStatus(State.ToString());
@@ -208,7 +198,7 @@ namespace Demo
                     LogStatus(State.ToString());
                     break;
 
-                case ConnectionStates.Ready:
+                case ConnectionStates.Authenticated:
                     if (!IsConnected)
                     {
                         await AdapterConnected();
@@ -251,6 +241,16 @@ namespace Demo
                     LogStatus(State.ToString());
                     break;
 
+                case ConnectionStates.J1939Starting:
+                    LogMessage("J1939 is starting, CAN bus speed is " + BlueFire.CanBusSpeed + ".");
+                    await GetTruckData();
+                    break;
+
+                case ConnectionStates.J1708Restarting:
+                    LogMessage("J1708 is restarting.");
+                    await GetTruckData();
+                    break;
+
                 case ConnectionStates.DataAvailable:
                     if (IsConnected)
                     {
@@ -272,6 +272,14 @@ namespace Demo
                         LogStatus(State.ToString());
                         LogMessage("The Adapter Timed Out.");
                     }
+                    break;
+
+                case ConnectionStates.Notification:
+                    LogNotification();
+                    break;
+
+                case ConnectionStates.AdapterMessage:
+                    LogAdapterMessage();
                     break;
 
                 case ConnectionStates.DataError:
@@ -296,8 +304,20 @@ namespace Demo
                     LogStatus(State.ToString());
                     break;
 
-                case ConnectionStates.IncompatibleVersion:
+                case ConnectionStates.IncompatibleAPI:
+                    LogMessage("The API is not compatible with this App.");
+                    AdapterNotConnected();
+                    LogStatus(State.ToString());
+                    break;
+
+                case ConnectionStates.IncompatibleAdapter:
                     LogMessage("The Adapter is not compatible with this API.");
+                    AdapterNotConnected();
+                    LogStatus(State.ToString());
+                    break;
+
+                case ConnectionStates.IncompatibleSecurity:
+                    LogMessage("App Security is not compatible with this API.");
                     AdapterNotConnected();
                     LogStatus(State.ToString());
                     break;
@@ -341,8 +361,9 @@ namespace Demo
             // because the filter is cleared when the app is started.
             //BlueFire.AdapterIdFilter.Add(BlueFire.AdapterId);
 
-            // Start retrieving truck data
-            await GetTruckData();
+            // Start retrieving truck data if key is on when app is connecting
+            if (BlueFire.Truck.IsKeyOn)
+                await GetTruckData();
         }
 
         private void AdapterDisconnected()
@@ -390,7 +411,7 @@ namespace Demo
 
         private void LogKeyState()
         {
-            if (BlueFire.IsKeyOn)
+            if (BlueFire.Truck.IsKeyOn)
                 WriteLog("Key is On");
             else
                 WriteLog("Key is Off");
@@ -443,7 +464,7 @@ namespace Demo
             }
         }
 
-        #endregion
+    #endregion
 
     #region Truck Data Processing
 
@@ -459,70 +480,91 @@ namespace Demo
 
         private async Task GetTruckData()
         {
-            // Set the retrieval method and interval.
-            // Note, this is here for demo-ing the different methods.
-            RetrievalMethod = RetrievalMethods.OnChange; // default
-#if (__ANDROID__)
-            RetrievalMethod = RetrievalMethods.OnInterval; // recommended for Android
-#endif
-            //RetrievalInterval = 5000; // default is MinInterval, only required if RetrievalMethod is OnInterval
-
-            //RetrievalMethod = RetrievalMethods.Synchronized;
-            BlueFire.SyncTimeout = 2000; // default is 1000, only required if RetrievalMethod is Synchronized
-
             // Clear any previous adapter data
             await BlueFire.ClearData();
 
             switch (GroupNo)
             {
                 case 0:
-                    //await BlueFire.GetEngineData1(); // default RetrievalMethods.OnChange
-                    //await BlueFire.GetEngineData1(RetrievalMethods.OnInterval); // default Interval = MinInterval
-                    //await BlueFire.GetEngineData1(RetrievalMethods.Synchronized); // blocks until data is retrieved
-
-                    await BlueFire.GetEngineData1(RetrievalMethod, RetrievalInterval); // RPM, Percent Torque, Driver Torque, Torque Mode
-                    await BlueFire.GetEngineData2(RetrievalMethod, RetrievalInterval); // Percent Load, Accelerator Pedal Position
-                    await BlueFire.GetEngineData3(RetrievalMethod, RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
+                    Pids = new JPIDs[7];
+                    Pids[0] = JPIDs.RPM;
+                    Pids[1] = JPIDs.Speed;
+                    Pids[2] = JPIDs.AccPedPos;
+                    Pids[3] = JPIDs.PctLoad;
+                    Pids[4] = JPIDs.PctTorque;
+                    Pids[5] = JPIDs.DrvPctTorque;
+                    Pids[6] = JPIDs.TorqueMode;
+                    await BlueFire.GetPIDs(Pids);
 
                     break;
 
                 case 1:
-                    await BlueFire.GetDistance(RetrievalMethod, RetrievalInterval); // Distance and Odometer
+                    Pids = new JPIDs[3];
+                    Pids[0] = JPIDs.Odometer;
+                    Pids[1] = JPIDs.Distance;
+                    Pids[2] = JPIDs.HiResDistance;
+                    await BlueFire.GetPIDs(Pids);
 
                     break;
 
                 case 2:
-                    await BlueFire.GetBrakeData(RetrievalMethod, RetrievalInterval); // Application Pressure, Primary Pressure, Secondary Pressure
-                    await BlueFire.GetEngineHours(RetrievalMethod, RetrievalInterval); // Total Engine Hours, Total Idle Hours
-                    await BlueFire.GetTransmissionGears(RetrievalMethod, RetrievalInterval); // Selected and Current Gears
-                    await BlueFire.GetBatteryVoltage(RetrievalMethod, RetrievalInterval); // Battery Voltage
+                    Pids = new JPIDs[6];
+                    Pids[0] = JPIDs.TotalHours;
+                    Pids[1] = JPIDs.IdleHours;
+                    Pids[2] = JPIDs.BrakeAppPressure;
+                    Pids[3] = JPIDs.BrakeAirPressure;
+                    Pids[4] = JPIDs.Transmission2;
+                    Pids[5] = JPIDs.BatteryVoltage;
+                    await BlueFire.GetPIDs(Pids);
 
                     break;
 
                 case 3:
-                    await BlueFire.GetFuelData(RetrievalMethod, RetrievalInterval); // Fuel Used, Idle Fuel Used, Fuel Rate, Instant Fuel Economy, Avg Fuel Economy, Throttle Position
+                    Pids = new JPIDs[8];
+                    Pids[0] = JPIDs.FuelRate;
+                    Pids[1] = JPIDs.FuelUsed;
+                    Pids[2] = JPIDs.HiResFuelUsed;
+                    Pids[3] = JPIDs.IdleFuelUsed;
+                    Pids[4] = JPIDs.AvgFuelEcon;
+                    Pids[5] = JPIDs.InstFuelEcon;
+                    Pids[6] = JPIDs.ThrottlePos;
+                    Pids[7] = JPIDs.FuelLevel;
+                    await BlueFire.GetPIDs(Pids);
 
                     break;
 
                 case 4:
-                    await BlueFire.GetPressures(RetrievalMethod, RetrievalInterval); // Oil Pressure, Coolant Pressure, Intake Manifold(Boost) Pressure
-                    await BlueFire.GetTemperatures(RetrievalMethod, RetrievalInterval); // Oil Temp, Coolant Temp, Intake Manifold Temperature
-                    await BlueFire.GetCoolantLevel(RetrievalMethod, RetrievalInterval); // Coolant Level
+                    Pids = new JPIDs[9];
+                    Pids[0] = JPIDs.OilTemp;
+                    Pids[1] = JPIDs.OilPressure;
+                    Pids[2] = JPIDs.IntakeTemp;
+                    Pids[3] = JPIDs.IntakePressure;
+                    Pids[4] = JPIDs.CoolantTemp;
+                    Pids[5] = JPIDs.CoolantPressure;
+                    Pids[6] = JPIDs.CoolantLevel;
+                    Pids[7] = JPIDs.TransTemp;
+                    Pids[8] = JPIDs.ExhaustTemp;
+                    await BlueFire.GetPIDs(Pids);
 
                     break;
 
                 case 5:
-                    await BlueFire.GetEngineData3(RetrievalMethod, RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
+                    Pids = new JPIDs[5];
+                    Pids[0] = JPIDs.BrakeSwitch;
+                    Pids[1] = JPIDs.ClutchSwitch;
+                    Pids[2] = JPIDs.ParkingBrake;
+                    Pids[3] = JPIDs.CruiseControl;
+                    Pids[4] = JPIDs.MaxSpeed;
+                    await BlueFire.GetPIDs(Pids);
 
                     break;
 
                 case 6:
                     if (!BlueFire.Truck.VINExists)
-                        await BlueFire.GetVehicleIdSync(); // VIN synchronously
-                                                           //await BlueFire.GetVehicleId(); // VIN asynchronously
+                        await BlueFire.Truck.GetVIN();
 
                     if (!BlueFire.Truck.Engine.IdExists)
-                        await BlueFire.GetVehicleData(); // Make, Model, Serial No asynchronously
+                        await BlueFire.Truck.GetInfo(); // Make, Model, Serial No
 
                     break;
 
@@ -902,6 +944,8 @@ namespace Demo
 
         private void StartELDUpload()
         {
+            ELD.StartUpload(); // required
+
             ELD.UploadFrom = 1;
             ELD.UploadTo = ELD.CurrentRecordNo;
 
@@ -931,6 +975,8 @@ namespace Demo
                 ELD.UploadFrom = UploadFrom;
 
                 ELD.UploadRecordNo = CurrentRecordNo;
+
+                ELD.StopUpload(); // required
 
                 LogMessage("The ELD upload has finished.");
             }
@@ -1015,7 +1061,12 @@ namespace Demo
                 if (ELD.ResetRecords)
                     ELD.Reset();
                 else
-                    ELD.Delete(ELD.UploadTo);
+                {
+                    if (ELD.UploadTo == 0)
+                        ELD.Delete(ELD.CurrentRecordNo);
+                    else
+                        ELD.Delete(ELD.UploadTo);
+                }
 
                 IsUploading = false;
             }
@@ -1082,6 +1133,39 @@ namespace Demo
         }
 
         #endregion
+
+    #endregion
+
+    #region Log Notification
+
+        private void LogNotification()
+        {
+            String NotificationMessage = BlueFire.NotificationMessage;
+            ErrorException = BlueFire.ErrorException;
+
+            if (NotificationMessage != "")
+            {
+                if (BlueFire.NotificationLocation != "")
+                    NotificationMessage = BlueFire.NotificationLocation + " - " + NotificationMessage;
+
+                BlueFire.ClearNotificationMessage();
+
+                WriteLog(NotificationMessage);
+            }
+        }
+
+    #endregion
+
+    #region Log Adapter Message
+
+        private void LogAdapterMessage()
+        {
+            String AdapterMessage = BlueFire.AdapterMessage;
+
+            BlueFire.ClearAdapterMessage();
+
+            WriteLog(AdapterMessage);
+        }
 
     #endregion
 

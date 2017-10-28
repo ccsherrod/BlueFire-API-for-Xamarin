@@ -19,8 +19,10 @@ namespace Demo
         private Int32 GroupNo;
         private const Int32 MaxGroupNo = 7;
 
-        private RetrievalMethods RetrievalMethod; 
+        private JPIDs[] Pids; // for sending J1939/J1587 Pids to the adapter
+
         private Int32 RetrievalInterval;
+        private RequestTypes RequestType; 
 
         private API BlueFire;
 
@@ -33,6 +35,8 @@ namespace Demo
         private Boolean IsMonitoringPGN;
 
         private Byte LedBrightness = 100;
+        private Boolean ConnectLastAdapter = false;
+
         private Boolean IgnoreJ1939 = false;
         private Boolean IgnoreJ1708 = false;
 
@@ -41,9 +45,12 @@ namespace Demo
 
         private ConnectionStates ConnectionState = ConnectionStates.NotConnected;
 
-        private event API.EventHandler APIDataHandlerEvent;
+        private event API.EventHandler APIHandlerEvent;
 
-        private event API.AppEventHandler APIAppHandlerEvent;
+        private event API.AppEventHandler AppHandlerEvent;
+
+        private Boolean IsStressTesting;
+        private Boolean IsRetrievingVINInfo;
 
         // ELD variables
         private Int32 CurrentRecordNo;
@@ -84,10 +91,10 @@ namespace Demo
 
             InitializeControls();
 
-            APIDataHandlerEvent += new API.EventHandler(DataEventHandler);
-            APIAppHandlerEvent += new API.AppEventHandler(AppEventHandler);
+            APIHandlerEvent += new API.EventHandler(APIEventHandler);
+            AppHandlerEvent += new API.AppEventHandler(AppEventHandler);
 
-            BlueFire = new API(APIDataHandlerEvent, APIAppHandlerEvent);
+            BlueFire = new API(APIHandlerEvent, AppHandlerEvent);
 
             Title.Text = "API Demo v-" + BlueFire.GetAPIVersion();
 
@@ -160,7 +167,7 @@ namespace Demo
             LedBrightnessEntry.Keyboard = Keyboard.Numeric;
             PGNEntry.Keyboard = Keyboard.Numeric;
 
-            ClearMessage();
+            ClearMessages();
 
             ShowStatus(ConnectionStates.NotConnected.ToString());
 
@@ -168,7 +175,7 @@ namespace Demo
             await BlueFire.Initialize();
 
             // Clear adapter id filter
-            BlueFire.AdapterIdFilter.Clear();
+            BlueFire.DeviceAddressFilter.Clear();
 
             // Set initial Bluetooth discovery timeout.
             // Note, this will be adjusted by the API after a connection is made.
@@ -191,6 +198,7 @@ namespace Demo
             UserNameEntry.Text = "";
             PasswordEntry.Text = "";
 
+            SecureDeviceSwitch.IsEnabled = false;
             SecureAdapterSwitch.IsEnabled = false;
 
             // Proprietary PGNs
@@ -210,6 +218,9 @@ namespace Demo
             IFTAIntervalEntry.Text = ELD.IFTAInterval.ToString();
             StatsIntervalEntry.Text = ELD.StatsInterval.ToString();
 
+            IFTAIntervalLayout.IsVisible = false;
+            StatsIntervalLayout.IsVisible = false;
+
             IFTASwitch.IsToggled = ELD.RecordIFTA;
             StatsSwitch.IsToggled = ELD.RecordStats;
 
@@ -225,14 +236,6 @@ namespace Demo
 
             // Show initial key state (key off)
             ShowKeyState();
-
-            // Set data retrieval method for testing.
-            //RetrievalMethod = RetrievalMethods.OnChange;
-            RetrievalMethod = RetrievalMethods.OnInterval;
-            //RetrievalMethod = RetrievalMethods.Synchronized;
-
-            // Or set the retrieval interval if using OnInterval.
-            //RetrievalInterval = 1000; // default is BlueFire.MinInterval
         }
 
     #endregion
@@ -243,24 +246,9 @@ namespace Demo
         {
             base.OnAppearing();
 
-            // Stop ELD recording if not set to record when app is connected
-            if (!ELD.IsRecordingConnected)
-            {
-                // Stop any streaming
-                if (ELD.IsStreaming)
-                    ELD.StopStreaming();
-
-                // Stop any recording
-                if (ELD.IsStarted)
-                    ELD.Stop();
-            }
-
             // Get truck data if key is on when app is connecting
-            if (TruckLayout.IsVisible)
-            {
-                if (BlueFire.IsKeyOn)
-                    GetTruckData();
-            }
+            if (BlueFire.Truck.IsKeyOn)
+                GetTruckData();
         }
 
         protected override void OnDisappearing()
@@ -370,15 +358,15 @@ namespace Demo
 
     #endregion
 
-    #region Data Event Handler
+    #region API Event Handler
 
-        private void DataEventHandler(ConnectionStates State)
+        private void APIEventHandler(ConnectionStates State)
         {
             // Run on the UI thread
-            Xamarin.Forms.Device.BeginInvokeOnMainThread(async() => await DataDataHandlerUI(State));
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(async() => await APIHandlerUI(State));
         }
 
-        private async Task DataDataHandlerUI(ConnectionStates State)
+        private async Task APIHandlerUI(ConnectionStates State)
         {
             ConnectionState = State;
 
@@ -387,9 +375,7 @@ namespace Demo
                 case ConnectionStates.Initializing:
                 case ConnectionStates.Initialized:
                 case ConnectionStates.Discovering:
-                case ConnectionStates.Connected:
                 case ConnectionStates.Authenticating:
-                case ConnectionStates.Authenticated:
                 case ConnectionStates.RetrievingData:
                 case ConnectionStates.Disconnecting:
                     ShowStatus(State.ToString());
@@ -410,7 +396,7 @@ namespace Demo
                     ShowStatus(State.ToString());
                     break;
 
-                case ConnectionStates.Ready:
+                case ConnectionStates.Authenticated:
                     if (!IsConnected)
                     {
                         await AdapterConnected();
@@ -453,6 +439,18 @@ namespace Demo
                     ShowStatus(State.ToString());
                     break;
 
+                case ConnectionStates.J1939Starting:
+                    ShowMessages("J1939 is starting, CAN bus speed is " + BlueFire.CanBusSpeedToString() + ".");
+                    await GetTruckData();
+                    ShowData();
+                    break;
+
+                case ConnectionStates.J1708Restarting:
+                    ShowMessages("J1708 is restarting.");
+                    await GetTruckData();
+                    ShowData();
+                    break;
+
                 case ConnectionStates.DataAvailable:
                     if (IsConnected)
                     {
@@ -462,7 +460,7 @@ namespace Demo
                     break;
 
                 case ConnectionStates.CANFilterFull:
-                    ShowMessage("The CAN Filter is Full. Some data will not be retrieved.");
+                    ShowMessages("The CAN Filter is Full. Some data will not be retrieved.");
                     ShowStatus(State.ToString());
                     break;
 
@@ -472,8 +470,16 @@ namespace Demo
                     {
                         AdapterNotConnected();
                         ShowStatus(State.ToString());
-                        ShowMessage("The Adapter Timed Out.");
+                        ShowMessages("The Adapter Timed Out.");
                     }
+                    break;
+
+                case ConnectionStates.Notification:
+                    LogNotification();
+                    break;
+
+                case ConnectionStates.AdapterMessage:
+                    LogAdapterMessage();
                     break;
 
                 case ConnectionStates.DataError:
@@ -487,19 +493,31 @@ namespace Demo
                     break;
 
                 case ConnectionStates.NotAuthenticated:
-                    ShowMessage("You are not authorized to access this adapter. Check your adapter security settings.");
+                    ShowMessages("You are not authorized to access this adapter. Check your adapter security settings.");
                     AdapterNotConnected();
                     ShowStatus(State.ToString());
                     break;
 
                 case ConnectionStates.NotFound:
-                    ShowMessage("A valid adapter was not found. Check your adapter connection settings.");
+                    ShowMessages("A valid adapter was not found. Check your adapter connection settings.");
                     AdapterNotConnected();
                     ShowStatus(State.ToString());
                     break;
 
-                case ConnectionStates.IncompatibleVersion:
-                    ShowMessage("The Adapter is not compatible with this API.");
+                case ConnectionStates.IncompatibleAPI:
+                    ShowMessages("The API is not compatible with this App.");
+                    AdapterNotConnected();
+                    ShowStatus(State.ToString());
+                    break;
+
+                case ConnectionStates.IncompatibleAdapter:
+                    ShowMessages("The Adapter is not compatible with this API.");
+                    AdapterNotConnected();
+                    ShowStatus(State.ToString());
+                    break;
+
+                case ConnectionStates.IncompatibleSecurity:
+                    ShowMessages("App Security is not compatible with this API.");
                     AdapterNotConnected();
                     ShowStatus(State.ToString());
                     break;
@@ -521,13 +539,21 @@ namespace Demo
             StatusText.Text = Status;
         }
 
-        private void ShowMessage(String Message)
+    #endregion
+
+    #region Show Messages
+
+        private void ShowMessages(String Message)
         {
-            MessageText.Text = Message;
+            if (MessageText.Text == "")
+                MessageText.Text = Message;
+            else
+                MessageText.Text += Const.CrLf + Message;
+
             MessageText.IsVisible = true;
         }
 
-        private void ClearMessage()
+        private void ClearMessages()
         {
             MessageText.Text = "";
             MessageText.IsVisible = false;
@@ -539,7 +565,7 @@ namespace Demo
 
         private void ShowKeyState()
         {
-            if (BlueFire.IsKeyOn)
+            if (BlueFire.Truck.IsKeyOn)
                 KeyStateText.Text = "Key On";
             else
                 KeyStateText.Text = "Key Off";
@@ -556,8 +582,9 @@ namespace Demo
             IsConnected = true;
             IsConnecting = false;
 
-            ClearMessage();
+            ClearMessages();
 
+            SecureDeviceSwitch.IsEnabled = false;
             SecureAdapterSwitch.IsEnabled = true;
 
             UpdateButton.IsEnabled = true;
@@ -575,8 +602,8 @@ namespace Demo
             // because the filter is cleared when the app is started.
             //BlueFire.AdapterIdFilter.Add(BlueFire.AdapterId);
 
-            // Get data if key is on when app is connecting
-            if (BlueFire.IsKeyOn)
+            // Start retrieving truck data if key is on when app is connecting
+            if (BlueFire.Truck.IsKeyOn)
                 await GetTruckData(); 
         }
 
@@ -604,6 +631,7 @@ namespace Demo
             J1939Switch.IsEnabled = true;
             J1708Switch.IsEnabled = true;
 
+            SecureDeviceSwitch.IsEnabled = false;
             SecureAdapterSwitch.IsEnabled = false;
 
             UpdateButton.IsEnabled = false;
@@ -619,6 +647,7 @@ namespace Demo
             IsConnected = false;
             IsConnecting = true;
 
+            SecureDeviceSwitch.IsEnabled = false;
             SecureAdapterSwitch.IsEnabled = false;
 
             UpdateButton.IsEnabled = false;
@@ -626,14 +655,14 @@ namespace Demo
 
             WriteLog("App reconnecting to the Adapter. Reason is " + BlueFire.ReconnectReason + ".");
 
-            ShowMessage("Lost connection to the Adapter, reconnecting.");
+            ShowMessages("Lost connection to the Adapter, reconnecting.");
         }
 
         private void AdapterReconnected()
         {
             WriteLog("Adapter re-connected.");
 
-            ShowMessage("Adapter reconnected.");
+            ShowMessages("Adapter reconnected.");
         }
 
         private void AdapterNotReconnected()
@@ -642,7 +671,7 @@ namespace Demo
 
             AdapterNotConnected();
 
-            ShowMessage("The Adapter did not reconnect.");
+            ShowMessages("The Adapter did not reconnect.");
         }
 
     #endregion
@@ -699,6 +728,9 @@ namespace Demo
                 LedBrightnessEntry.Text = LedBrightness.ToString();
             }
 
+            if (ConnectLastAdapter != BlueFire.ConnectLastAdapter)
+                ConnectLastAdapterSwitch.IsToggled = BlueFire.ConnectLastAdapter;
+
             // Check for SendPGN response
             if ((IsSendingPGN || IsMonitoringPGN) && BlueFire.PGN == PGN)
             {
@@ -707,12 +739,366 @@ namespace Demo
             }
         }
 
+    #endregion
+
+    #region Connect Button
+
+        private async void ConnectButton_Clicked(object sender, EventArgs e)
+        {
+            ConnectButton.IsEnabled = false;
+
+            StartServiceButton.IsEnabled = false;
+            StopServiceButton.IsEnabled = false;
+
+            SecureDeviceSwitch.IsEnabled = false;
+            SecureAdapterSwitch.IsEnabled = false;
+
+            UpdateButton.IsEnabled = false;
+            SendButton.IsEnabled = false;
+
+            // Check for connecting
+            if (IsConnectButton)
+            {
+                IsConnecting = true;
+                IsConnected = false;
+
+                ShowStatus("Connecting...");
+
+                ClearMessages();
+
+                ShowDisconnectButton();
+
+                BlueFire.UseBLE = BLESwitch.IsToggled;
+                BlueFire.UseBT2 = BT2Switch.IsToggled;
+
+                BlueFire.IgnoreJ1939 = !J1939Switch.IsToggled; // is opposite
+                BlueFire.IgnoreJ1708 = !J1708Switch.IsToggled; // is opposite
+
+                BlueFire.ConnectLastAdapter = ConnectLastAdapterSwitch.IsToggled;
+
+                BlueFire.IsNotificationsOn = false;
+                BlueFire.IsPerformanceModeOn = false;
+
+                BlueFire.OptimizeDataRetrieval = true; // recommended
+
+                await BlueFire.Connect();
+            }
+            else // Disconnecting
+            {
+                await DisconnectAdapter(true);
+            }
+        }
+
+        private void ShowConnectButton()
+        {
+            IsConnectButton = true;
+            ConnectButton.Text = "Connect";
+
+            ConnectButton.IsEnabled = true;
+            StartServiceButton.IsEnabled = true;
+            StopServiceButton.IsEnabled = true;
+        }
+
+        private void ShowDisconnectButton()
+        {
+            IsConnectButton = false;
+            ConnectButton.Text = "Disconnect";
+
+            ConnectButton.IsEnabled = true;
+        }
+
+        private async Task DisconnectAdapter(Boolean WaitForDisconnect)
+        {
+            switch (ConnectionState)
+            {
+                // Check for cancelling a connection attempt
+                case ConnectionStates.Discovering:
+                case ConnectionStates.Connecting:
+                case ConnectionStates.Reconnecting:
+                    await BlueFire.CancelConnecting();
+                    break;
+
+                // Check for already connected
+                case ConnectionStates.Reconnected:
+                case ConnectionStates.Authenticating:
+                case ConnectionStates.Authenticated:
+                case ConnectionStates.RetrievingData:
+                case ConnectionStates.DataAvailable:
+                    await BlueFire.Disconnect(WaitForDisconnect);
+                    break;
+
+                // already disconnecting or not connected
+                default:
+                    AdapterNotConnected();
+                    break;
+            }
+        }
+
+    #endregion
+
+    #region Service Buttons
+
+        private async void StartServiceButton_Clicked(object sender, EventArgs e)
+        {
+            if (DemoService == null)
+                DemoService = new Service();
+
+            StartServiceButton.IsEnabled = false;
+
+            await DemoService.StartService();
+
+            StopServiceButton.IsEnabled = true;
+
+            TruckButton.IsEnabled = false;
+            ELDButton.IsEnabled = false;
+            StressTestButton.IsEnabled = false;
+
+            ConnectButton.IsEnabled = false;
+            UpdateButton.IsEnabled = false;
+            SendButton.IsEnabled = false;
+        }
+
+        private async void StopServiceButton_Clicked(object sender, EventArgs e)
+        {
+            if (DemoService == null)
+                return;
+
+            StopServiceButton.IsEnabled = false;
+
+            await DemoService.StopService();
+
+            StartServiceButton.IsEnabled = true;
+
+            TruckButton.IsEnabled = true;
+            ELDButton.IsEnabled = true;
+            StressTestButton.IsEnabled = true;
+
+            ConnectButton.IsEnabled = true;
+            UpdateButton.IsEnabled = true;
+            SendButton.IsEnabled = true;
+        }
+
+    #endregion
+
+    #region Update Button
+
+        // Adapter settings
+        private void UpdateButton_Clicked(object sender, EventArgs e)
+        {
+            // LED Brightness
+            Byte LedBrightness;
+
+            ClearMessages();
+
+            if (!Byte.TryParse(LedBrightnessEntry.Text, out LedBrightness) || LedBrightness < 5 || LedBrightness > 100)
+            {
+                ShowMessages("Invalid LED Brightness");
+                return;
+            }
+            BlueFire.LedBrightness = LedBrightness;
+
+            // Security
+            Boolean SecureDevice = SecureDeviceSwitch.IsEnabled;
+            Boolean SecureAdapter = SecureAdapterSwitch.IsToggled;
+
+            String UserName = UserNameEntry.Text.Trim();
+            String Password = PasswordEntry.Text.Trim();
+
+            if (UserName.Length > 20)
+            {
+                ShowMessages("Invalid User Name");
+                return;
+            }
+            if (Password.Length > 12)
+            {
+                ShowMessages("Invalid Password");
+                return;
+            }
+
+            BlueFire.UpdateSecurity(SecureDevice, SecureAdapter, UserName, Password);
+        }
+
+    #endregion
+
+    #region Send Button
+
+        // Proprietary PGN Monitoring/Sending
+        private void SendButton_Clicked(object sender, EventArgs e)
+        {
+            IsSendingPGN = false;
+            IsMonitoringPGN = false;
+
+            // Get PGN
+            if (!Int32.TryParse("0" + PGNEntry.Text.Trim(), out PGN))
+            {
+                ShowMessages("PGN must be numeric.");
+                return;
+            }
+
+            // Ignore if no PGN
+            if (PGN == 0)
+                return;
+
+            // Get PGN Data
+            Byte[] PGNBytes = new Byte[8];
+
+            String PGNData = PGNDataEntry.Text.Trim();
+
+            if (PGNData.Length == 0) // Monitor a PGN
+            {
+                Int32 Source = 0; // engine
+                IsMonitoringPGN = true;
+                BlueFire.MonitorPGN(Source, PGN);
+            }
+            else // Send a PGN
+            {
+                // Edit the PGN Data to be 16 hex characters (8 bytes)
+                if (PGNData.Length != 16)
+                {
+                    ShowMessages("PGN Data must be 16 hex characters (8 bytes).");
+                    return;
+                }
+
+                // Convert the PGN Data hex string to bytes
+                try
+                {
+                    for (int i = 0; i < 8; i++)
+                        PGNBytes[i] = Byte.Parse(PGNData.Substring(i * 2, 2), NumberStyles.HexNumber);
+                }
+                catch
+                {
+                    ShowMessages("PGN must be numeric.");
+                    return;
+                }
+
+                // Send the PGN
+                IsSendingPGN = true;
+                BlueFire.SendPGN(PGN, PGNBytes);
+            }
+        }
+
+    #endregion
+
+    #region Next Fault Button
+
+        private void NextFaultButton_Clicked(object sender, EventArgs e)
+        {
+            FaultIndex++;
+            if (FaultIndex == BlueFire.Truck.ActiveFaultsCount)
+                FaultIndex = 0;
+        }
+
+    #endregion
+
+    #region Reset Fault Button
+
+        private async void ResetFaultButton_Clicked(object sender, EventArgs e)
+        {
+            await BlueFire.ResetFaults();
+        }
+
+    #endregion
+
+    #region Truck Button
+
+        // Truck Data
+        private async void TruckButton_Clicked(object sender, EventArgs e)
+        {
+            // Clear messages
+            ClearMessages();
+
+            // Clear any previous adapter data retrieval
+            if (!IsStressTesting)
+                await BlueFire.ClearData();
+
+            await ShowTruckLayout();
+        }
+
+    #endregion
+
+    #region Show Truck Layout
+
+        private async Task<Boolean> ShowTruckLayout()
+        {
+            // Go back to the adapter page
+            if (TruckLayout.IsVisible)
+            {
+                NextButton.IsVisible = false;
+                PrevButton.IsVisible = false;
+
+                ShowAdapterPage();
+                return false;
+            }
+
+            // Show the truck layout page
+            HideELDPage();
+
+            AdapterLayout.IsVisible = false;
+            TruckLayout.IsVisible = true;
+
+            NextButton.IsVisible = true;
+            PrevButton.IsVisible = true;
+
+            GroupNo = -1; // so it increments to 0
+
+            await ShowTruckPage();
+
+            return true;
+        }
+
+    #endregion
+
+    #region Show Truck Page
+
+        private async Task ShowTruckPage(Boolean ShowPrevious = false)
+        {
+            if (ShowPrevious)
+                GroupNo--;
+            else
+                GroupNo++;
+
+            if (GroupNo > MaxGroupNo)
+                GroupNo = 0;
+
+            else if (GroupNo < 0)
+                GroupNo = MaxGroupNo;
+
+            await GetTruckData();
+        }
+
+    #endregion
+
+    #region Next/Prev Buttons
+
+        // Next Truck Data
+        private async void NextButton_Clicked(object sender, EventArgs e)
+        {
+            // Clear message
+            ClearMessages();
+
+            // Show next page
+            await ShowTruckPage();
+        }
+
+        // Previous Truck Data
+        private async void PrevButton_Clicked(object sender, EventArgs e)
+        {
+            // Clear message
+            ClearMessages();
+
+            // Show previous pge
+            await ShowTruckPage(true);
+        }
+
         #endregion
 
     #region Get Truck Data
 
         private async Task GetTruckData()
         {
+            if (!TruckLayout.IsVisible)
+                return;
+
             DataView1.Text = "NA";
             DataView2.Text = "NA";
             DataView3.Text = "NA";
@@ -723,19 +1109,9 @@ namespace Demo
 
             FaultLayout.IsVisible = false;
 
-            // Set the retrieval method and interval.
-            // Note, this is here for demo-ing the different methods.
-            RetrievalMethod = RetrievalMethods.OnChange; // default
-#if (__ANDROID__)
-            RetrievalMethod = RetrievalMethods.OnInterval; // recommended for Android
-#endif
-            //RetrievalInterval = 5000; // default is MinInterval, only required if RetrievalMethod is OnInterval
-
-            //RetrievalMethod = RetrievalMethods.Synchronized;
-            //BlueFire.SyncTimeout = 2000; // default is 1000, only required if RetrievalMethod is Synchronized
-
             // Clear any previous adapter data
-            await BlueFire.ClearData();
+            if (!IsStressTesting)
+                await BlueFire.ClearData();
 
             switch (GroupNo)
             {
@@ -748,13 +1124,18 @@ namespace Demo
                     TextView6.Text = "Driver Torque";
                     TextView7.Text = "Torque Mode";
 
-                    //await BlueFire.GetEngineData1(); // default RetrievalMethods.OnChange
-                    //await BlueFire.GetEngineData1(RetrievalMethods.OnInterval); // default Interval = MinInterval
-                    //await BlueFire.GetEngineData1(RetrievalMethods.Synchronized); // blocks until data is retrieved
-
-                    await BlueFire.GetEngineData1(RetrievalMethod, RetrievalInterval); // RPM, Percent Torque, Driver Torque, Torque Mode
-                    await BlueFire.GetEngineData2(RetrievalMethod, RetrievalInterval); // Percent Load, Accelerator Pedal Position
-                    await BlueFire.GetEngineData3(RetrievalMethod, RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
+                    if (!IsStressTesting)
+                    {
+                        Pids = new JPIDs[7];
+                        Pids[0] = JPIDs.RPM;
+                        Pids[1] = JPIDs.Speed;
+                        Pids[2] = JPIDs.AccPedPos;
+                        Pids[3] = JPIDs.PctLoad;
+                        Pids[4] = JPIDs.PctTorque;
+                        Pids[5] = JPIDs.DrvPctTorque;
+                        Pids[6] = JPIDs.TorqueMode;
+                        await BlueFire.GetPIDs(Pids);
+                    }
 
                     break;
 
@@ -767,7 +1148,14 @@ namespace Demo
                     TextView6.Text = "     HiRes";
                     TextView7.Text = "     LoRes";
 
-                    await BlueFire.GetDistance(RetrievalMethod, RetrievalInterval); // Distance and Odometer
+                    if (!IsStressTesting)
+                    {
+                        Pids = new JPIDs[3];
+                        Pids[0] = JPIDs.Odometer;
+                        Pids[1] = JPIDs.Distance;
+                        Pids[2] = JPIDs.HiResDistance;
+                        await BlueFire.GetPIDs(Pids);
+                    }
 
                     break;
 
@@ -780,10 +1168,17 @@ namespace Demo
                     TextView6.Text = "Selected Gear";
                     TextView7.Text = "Battery Volts";
 
-                    await BlueFire.GetBrakeData(RetrievalMethod, RetrievalInterval); // Application Pressure, Primary Pressure, Secondary Pressure
-                    await BlueFire.GetEngineHours(RetrievalMethod, RetrievalInterval); // Total Engine Hours, Total Idle Hours
-                    await BlueFire.GetTransmissionGears(RetrievalMethod, RetrievalInterval); // Selected and Current Gears
-                    await BlueFire.GetBatteryVoltage(RetrievalMethod, RetrievalInterval); // Battery Voltage
+                    if (!IsStressTesting)
+                    {
+                        Pids = new JPIDs[6];
+                        Pids[0] = JPIDs.TotalHours;
+                        Pids[1] = JPIDs.IdleHours;
+                        Pids[2] = JPIDs.BrakeAppPressure;
+                        Pids[3] = JPIDs.BrakeAirPressure;
+                        Pids[4] = JPIDs.Transmission2;
+                        Pids[5] = JPIDs.BatteryVoltage;
+                        await BlueFire.GetPIDs(Pids);
+                    }
 
                     break;
 
@@ -796,7 +1191,18 @@ namespace Demo
                     TextView6.Text = "Inst Fuel Econ";
                     TextView7.Text = "Throttle Pos";
 
-                    await BlueFire.GetFuelData(RetrievalMethod, RetrievalInterval); // Fuel Used, Idle Fuel Used, Fuel Rate, Instant Fuel Economy, Avg Fuel Economy, Throttle Position
+                    if (!IsStressTesting)
+                    {
+                        Pids = new JPIDs[7];
+                        Pids[0] = JPIDs.FuelRate;
+                        Pids[1] = JPIDs.FuelUsed;
+                        Pids[2] = JPIDs.HiResFuelUsed;
+                        Pids[3] = JPIDs.IdleFuelUsed;
+                        Pids[4] = JPIDs.AvgFuelEcon;
+                        Pids[5] = JPIDs.InstFuelEcon;
+                        Pids[6] = JPIDs.ThrottlePos;
+                        await BlueFire.GetPIDs(Pids);
+                    }
 
                     break;
 
@@ -809,9 +1215,18 @@ namespace Demo
                     TextView6.Text = "Coolant Pres";
                     TextView7.Text = "Coolant Level";
 
-                    await BlueFire.GetPressures(RetrievalMethod, RetrievalInterval); // Oil Pressure, Coolant Pressure, Intake Manifold(Boost) Pressure
-                    await BlueFire.GetTemperatures(RetrievalMethod, RetrievalInterval); // Oil Temp, Coolant Temp, Intake Manifold Temperature
-                    await BlueFire.GetCoolantLevel(RetrievalMethod, RetrievalInterval); // Coolant Level
+                    if (!IsStressTesting)
+                    {
+                        Pids = new JPIDs[7];
+                        Pids[0] = JPIDs.OilTemp;
+                        Pids[1] = JPIDs.OilPressure;
+                        Pids[2] = JPIDs.IntakeTemp;
+                        Pids[3] = JPIDs.IntakePressure;
+                        Pids[4] = JPIDs.CoolantTemp;
+                        Pids[5] = JPIDs.CoolantPressure;
+                        Pids[6] = JPIDs.CoolantLevel;
+                        await BlueFire.GetPIDs(Pids);
+                    }
 
                     break;
 
@@ -824,7 +1239,22 @@ namespace Demo
                     TextView6.Text = "Cruise Speed";
                     TextView7.Text = "Max Speed";
 
-                    await BlueFire.GetEngineData3(RetrievalMethod, RetrievalInterval); // Vehicle Speed, Max Set Speed, Brake Switch, Clutch Switch, Park Brake Switch, Cruise Control Settings and Switches
+                    // Restart stress test after retrieving VIN/Info data
+                    if (IsStressTesting && IsRetrievingVINInfo)
+                    {
+                        IsRetrievingVINInfo = false;
+                        await StartStressTest();
+                    }
+                    else
+                    {
+                        Pids = new JPIDs[5];
+                        Pids[0] = JPIDs.BrakeSwitch;
+                        Pids[1] = JPIDs.ClutchSwitch;
+                        Pids[2] = JPIDs.ParkingBrake;
+                        Pids[3] = JPIDs.CruiseControl;
+                        Pids[4] = JPIDs.MaxSpeed;
+                        await BlueFire.GetPIDs(Pids);
+                    }
 
                     break;
 
@@ -837,18 +1267,20 @@ namespace Demo
                     TextView6.Text = "";
                     TextView7.Text = "";
 
+                    IsRetrievingVINInfo = true;
+
+                    // Stop stress test to retrieve VIN/Info data
+                    if (IsStressTesting)
+                        await BlueFire.ClearData();
+
                     if (!BlueFire.Truck.VINExists)
-                    {
-                        DataView7.Text = "Retrieving VIN ...";
-                        await BlueFire.GetVehicleIdSync(); // VIN synchronously
-                                                           //await BlueFire.GetVehicleId(); // VIN asynchronously
-                    }
+                        await BlueFire.Truck.GetVIN();
 
                     if (!BlueFire.Truck.Engine.IdExists)
-                    {
-                        DataView7.Text = "Retrieving Vehicle Data ...";
-                        await BlueFire.GetVehicleData(); // Make, Model, Serial No asynchronously
-                    }
+                        await BlueFire.Truck.GetInfo(); // Make, Model, Serial No
+
+                    if (!BlueFire.Truck.VINExists || !BlueFire.Truck.Engine.IdExists)
+                        DataView7.Text = "Retrieving Data ...";
 
                     break;
 
@@ -861,8 +1293,14 @@ namespace Demo
                     TextView6.Text = "";
                     TextView7.Text = "";
 
-                    // Faults
-                    await BlueFire.GetFaults();
+                    // Restart stress test after retrieving VIN/Info data
+                    if (IsStressTesting && IsRetrievingVINInfo)
+                    {
+                        IsRetrievingVINInfo = false;
+                        await StartStressTest();
+                    }
+                    else
+                        await BlueFire.GetFaults();
 
                     break;
             }
@@ -891,9 +1329,9 @@ namespace Demo
                     DataView2.Text = FormatSingle(BlueFire.Truck.HiResDistance, 0);
                     DataView3.Text = FormatSingle(BlueFire.Truck.LoResDistance, 0);
                     DataView4.Text = "";
-                    DataView5.Text = FormatSingle(BlueFire.Truck.Odometer, 0); 
-                    DataView6.Text = FormatSingle(BlueFire.Truck.HiResOdometer, 0); 
-                    DataView7.Text = FormatSingle(BlueFire.Truck.LoResOdometer, 0); 
+                    DataView5.Text = FormatSingle(BlueFire.Truck.Odometer, 0);
+                    DataView6.Text = FormatSingle(BlueFire.Truck.HiResOdometer, 0);
+                    DataView7.Text = FormatSingle(BlueFire.Truck.LoResOdometer, 0);
                     break;
 
                 case 2:
@@ -966,7 +1404,7 @@ namespace Demo
                     String Conversion = "";
 
                     FaultLayout.IsVisible = false;
-                    
+
                     // Show truck faults
                     if (BlueFire.Truck.ActiveFaultsCount > 0)
                     {
@@ -1017,9 +1455,170 @@ namespace Demo
             return Math.Round(Data, Precision).ToString();
         }
 
+        #endregion
+
+    #region Stress Test Button
+
+        // Test System Load
+        private async void StressTestButton_Clicked(object sender, EventArgs e)
+        {
+            // Request as much data from the adapter as possible in order to
+            // stress test the connection.
+            // Note, you will get an Adapter Filter Full message if you request too 
+            // much data.
+
+            // Clear any previous adapter data
+            await BlueFire.ClearData();
+
+            // Show truck layout or adapter page
+            if (!await ShowTruckLayout())
+            {
+                IsStressTesting = false;
+                return;
+            }
+
+            IsStressTesting = true;
+
+            await StartStressTest();
+        }
+
+        private async Task StartStressTest()
+        {
+            // Clear any previous adapter data
+            await BlueFire.ClearData();
+
+            // Start monitoring for faults.
+            // Note, this clears the CAN Filter so it must be before any other requests for data.
+            await BlueFire.GetFaults();
+
+            // Start monitoring all other truck data
+
+            Pids = new JPIDs[7];
+            Pids[0] = JPIDs.RPM;
+            Pids[1] = JPIDs.Speed;
+            Pids[2] = JPIDs.AccPedPos;
+            Pids[3] = JPIDs.PctLoad;
+            Pids[4] = JPIDs.PctTorque;
+            Pids[5] = JPIDs.DrvPctTorque;
+            Pids[6] = JPIDs.TorqueMode;
+            await BlueFire.GetPIDs(Pids);
+
+            Pids = new JPIDs[3];
+            Pids[0] = JPIDs.Odometer;
+            Pids[1] = JPIDs.Distance;
+            Pids[2] = JPIDs.HiResDistance;
+            await BlueFire.GetPIDs(Pids);
+
+            Pids = new JPIDs[6];
+            Pids[0] = JPIDs.TotalHours;
+            Pids[1] = JPIDs.IdleHours;
+            Pids[2] = JPIDs.BrakeAppPressure;
+            Pids[3] = JPIDs.BrakeAirPressure;
+            Pids[4] = JPIDs.Transmission2;
+            Pids[5] = JPIDs.BatteryVoltage;
+            await BlueFire.GetPIDs(Pids);
+
+            Pids = new JPIDs[7];
+            Pids[0] = JPIDs.FuelRate;
+            Pids[1] = JPIDs.FuelUsed;
+            Pids[2] = JPIDs.HiResFuelUsed;
+            Pids[3] = JPIDs.IdleFuelUsed;
+            Pids[4] = JPIDs.AvgFuelEcon;
+            Pids[5] = JPIDs.InstFuelEcon;
+            Pids[6] = JPIDs.ThrottlePos;
+            await BlueFire.GetPIDs(Pids);
+
+            Pids = new JPIDs[7];
+            Pids[0] = JPIDs.OilTemp;
+            Pids[1] = JPIDs.OilPressure;
+            Pids[2] = JPIDs.IntakeTemp;
+            Pids[3] = JPIDs.IntakePressure;
+            Pids[4] = JPIDs.CoolantTemp;
+            Pids[5] = JPIDs.CoolantPressure;
+            Pids[6] = JPIDs.CoolantLevel;
+            await BlueFire.GetPIDs(Pids);
+
+            Pids = new JPIDs[5];
+            Pids[0] = JPIDs.BrakeSwitch;
+            Pids[1] = JPIDs.ClutchSwitch;
+            Pids[2] = JPIDs.ParkingBrake;
+            Pids[3] = JPIDs.CruiseControl;
+            Pids[4] = JPIDs.MaxSpeed;
+            await BlueFire.GetPIDs(Pids);
+        }
+
+        #endregion
+
+    #region ELD Button
+
+        // ELD Recording
+        private async void ELDButton_Clicked(object sender, EventArgs e)
+        {
+            // Clear message
+            ClearMessages();
+
+            // Clear any previous adapter data retrieval
+            await BlueFire.ClearData();
+
+            if (ELDLayout.IsVisible)
+            {
+                ShowAdapterPage();
+                return;
+            }
+
+            AdapterLayout.IsVisible = false;
+            TruckLayout.IsVisible = false;
+
+            NextButton.IsVisible = false;
+            PrevButton.IsVisible = false;
+
+            ShowELDPage();
+        }
+
     #endregion
 
     #region Show ELD Page
+
+        private void ShowELDPage()
+        {
+            AdapterLayout.IsVisible = false;
+            TruckLayout.IsVisible = false;
+
+            ELDLayout.IsVisible = true;
+
+            ClearELDPage();
+
+            CheckStreaming();
+
+            if (!ELD.IsCompatibleAdapter)
+            {
+                ShowMessages("ELD is not available with your current adapter.");
+                return;
+            }
+
+            // Get current record
+            CurrentRecordNo = -1;
+
+            ELD.GetCurrentRecord();
+
+            SetELDButtons();
+        }
+
+        private void HideELDPage()
+        {
+            if (!ELDLayout.IsVisible)
+                return;
+
+            EditELDData();
+
+            ELDLayout.IsVisible = false;
+
+            OnELDPageDisappearing();
+        }
+
+    #endregion
+
+    #region ELD
 
         #region Clear ELD Page
 
@@ -1078,6 +1677,18 @@ namespace Demo
             else
                 StartELDButton.Text = StartTitle;
 
+            // Not connected
+            if (!IsConnected)
+            {
+                EnableELDInput(true);
+
+                StartELDButton.IsEnabled = false;
+                DeleteELDButton.IsEnabled = false;
+                UploadELDButton.IsEnabled = false;
+
+                return;
+            }
+
             // Uploading
             if (IsUploading)
             {
@@ -1097,7 +1708,7 @@ namespace Demo
 
                 StartELDButton.IsEnabled = true; // for stop
                 DeleteELDButton.IsEnabled = false;
-                UploadELDButton.IsEnabled = false;
+                UploadELDButton.IsEnabled = (ELD.CurrentRecordNo > 0);
 
                 return;
             }
@@ -1124,7 +1735,7 @@ namespace Demo
                 else
                     StartELDButton.IsEnabled = true; // for start
 
-                if (ELD.UploadFrom == 1)
+                if (ELD.UploadFrom <= 1)
                     DeleteELDButton.IsEnabled = true;
 
                 UploadELDButton.Text = UploadRecordsTitle;
@@ -1178,7 +1789,7 @@ namespace Demo
                 // Check if not enough memory to record all ELD records
                 if (!ELD.IsTotalMemoryAvailable)
                 {
-                    ShowMessage("There is not emough adapter memory to record ELD data. You must change your ELD Interval or Duration in Settings.");
+                    ShowMessages("There is not emough adapter memory to record ELD data. You must change your ELD Interval or Duration in Settings.");
                     return;
                 }
                 // Check if not enough memory remaining to record all ELD records
@@ -1198,7 +1809,7 @@ namespace Demo
                 // Check for any recording set
                 if (!ELD.IsStreaming && ELD.RecordingMode == ELD.RecordingModes.RecordNever)
                 {
-                    ShowMessage("You have not set any ELD recording.");
+                    ShowMessages("You have not set any ELD recording.");
                     return;
                 }
 
@@ -1514,11 +2125,11 @@ namespace Demo
 
             if (IFTASwitch.IsToggled)
                 if (!EditIFTAInterval())
-                return false;
+                    return false;
 
             if (StatsSwitch.IsToggled)
                 if (!EditStatsInterval())
-                return false;
+                    return false;
 
             // Save ELD data
             ELD.RecordIFTA = IFTASwitch.IsToggled;
@@ -1541,7 +2152,7 @@ namespace Demo
 
             if (DriverId.Length > ELD.CustomDataLength) // driver id is treated as a custom record
             {
-                ShowMessage("Driver Id length is too long for ELD custom records.");
+                ShowMessages("Driver Id length is too long for ELD custom records.");
                 return false;
             }
 
@@ -1555,7 +2166,7 @@ namespace Demo
             Single ELDInterval;
             if (!Single.TryParse("0" + ELDIntervalEntry.Text, out ELDInterval))
             {
-                ShowMessage("ELD Interval must be numeric.");
+                ShowMessages("ELD Interval must be numeric.");
                 return false;
             }
 
@@ -1564,7 +2175,7 @@ namespace Demo
 
             if (AlignELDSwitch.IsToggled && !ELD.IsHourAligned(ELDInterval))
             {
-                ShowMessage("ELD Interval cannot be aligned to the hour.");
+                ShowMessages("ELD Interval cannot be aligned to the hour.");
                 AlignELDSwitch.IsToggled = false;
                 return false;
             }
@@ -1575,7 +2186,7 @@ namespace Demo
 
             if (ELD.MaxRecords > 0 && !ELD.IsTotalMemoryAvailable)
             {
-                ShowMessage("There is not emough adapter memory to record ELD data. You must change your ELD Interval or Duration in Settings.");
+                ShowMessages("There is not emough adapter memory to record ELD data. You must change your ELD Interval or Duration in Settings.");
                 return false;
             }
 
@@ -1589,7 +2200,7 @@ namespace Demo
             Single ELDIFTAInterval;
             if (!Single.TryParse("0" + IFTAIntervalEntry.Text, out ELDIFTAInterval))
             {
-                ShowMessage("IFTA Interval must be numeric.");
+                ShowMessages("IFTA Interval must be numeric.");
                 return false;
             }
 
@@ -1598,7 +2209,7 @@ namespace Demo
 
             if (AlignIFTASwitch.IsToggled && !ELD.IsHourAligned(ELDIFTAInterval))
             {
-                ShowMessage("IFTA Interval cannot be aligned to the hour.");
+                ShowMessages("IFTA Interval cannot be aligned to the hour.");
                 AlignIFTASwitch.IsToggled = false;
                 return false;
             }
@@ -1609,7 +2220,7 @@ namespace Demo
 
             if (ELD.MaxRecords > 0 && !ELD.IsTotalMemoryAvailable)
             {
-                ShowMessage("There is not emough adapter memory to record ELD data. You must change your ELD Interval or Duration in Settings.");
+                ShowMessages("There is not emough adapter memory to record ELD data. You must change your ELD Interval or Duration in Settings.");
                 return false;
             }
 
@@ -1623,7 +2234,7 @@ namespace Demo
             Single ELDStatsInterval;
             if (!Single.TryParse("0" + StatsIntervalEntry.Text, out ELDStatsInterval))
             {
-                ShowMessage("Stats Interval must be numeric.");
+                ShowMessages("Stats Interval must be numeric.");
                 return false;
             }
 
@@ -1632,7 +2243,7 @@ namespace Demo
 
             if (AlignStatsSwitch.IsToggled && !ELD.IsHourAligned(ELDStatsInterval))
             {
-                ShowMessage("Stats Interval cannot be aligned to the hour.");
+                ShowMessages("Stats Interval cannot be aligned to the hour.");
                 AlignStatsSwitch.IsToggled = false;
                 return false;
             }
@@ -1643,7 +2254,7 @@ namespace Demo
 
             if (ELD.MaxRecords > 0 && !ELD.IsTotalMemoryAvailable)
             {
-                ShowMessage("There is not emough adapter memory to record ELD data. You must change your ELD Interval or Duration in Settings.");
+                ShowMessages("There is not emough adapter memory to record ELD data. You must change your ELD Interval or Duration in Settings.");
                 return false;
             }
 
@@ -1658,6 +2269,10 @@ namespace Demo
 
         private void StartELDUpload()
         {
+            ShowMessages("ELD upload has started.");
+
+            ELD.StartUpload(); // required
+
             ELD.UploadFrom = 1;
             ELD.UploadTo = ELD.CurrentRecordNo;
 
@@ -1690,7 +2305,9 @@ namespace Demo
 
                 RefreshELDPage(CurrentRecordNo);
 
-                ShowMessage("The ELD upload has finished.");
+                ELD.StopUpload(); // required
+
+                ShowMessages("ELD upload has finished.");
             }
             else
                 ELD.GetNextRecord();
@@ -1704,7 +2321,7 @@ namespace Demo
         {
             // Save the locallly retrieved ELD records
 
-            ShowMessage("ELD Records have been Saved.");
+            ShowMessages("ELD Records have been Saved.");
         }
 
         #endregion
@@ -1773,7 +2390,12 @@ namespace Demo
                 if (ELD.ResetRecords)
                     ELD.Reset();
                 else
-                    ELD.Delete(ELD.UploadTo);
+                { 
+                    if (ELD.UploadTo == 0)
+                        ELD.Delete(ELD.CurrentRecordNo);
+                    else
+                        ELD.Delete(ELD.UploadTo);
+                }
 
                 IsUploading = false;
             }
@@ -1783,7 +2405,21 @@ namespace Demo
 
             ClearELDPage();
 
-            ShowMessage("The ELD records have been deleted.");
+            ShowMessages("The ELD records have been deleted.");
+        }
+
+        #endregion
+
+        #region IFTA/Stats Switches
+
+        private void IFTASwitch_Toggled(object sender, EventArgs e)
+        {
+            IFTAIntervalLayout.IsVisible = IFTASwitch.IsToggled;
+        }
+
+        private void StatsSwitch_Toggled(object sender, EventArgs e)
+        {
+            StatsIntervalLayout.IsVisible = StatsSwitch.IsToggled;
         }
 
         #endregion
@@ -1826,11 +2462,14 @@ namespace Demo
 
         private void OnELDPageDisappearing()
         {
+            if (!IsConnected)
+                return;
+
             // Pause uploading
             if (IsUploading)
             {
                 IsUploading = false;
-                ShowMessage("ELD Uploading has been cancelled.");
+                ShowMessages("ELD Uploading has been cancelled.");
             }
 
             // Stop local recording
@@ -1840,7 +2479,7 @@ namespace Demo
                 {
                     ELD.Stop();
 
-                    ShowMessage("Local ELD Recording has been cancelled.");
+                    ShowMessages("Local ELD Recording has been stopped.");
 
                     // Restart ELD for disconnected recording
                     if (ELD.IsRecordingDisconnected)
@@ -1861,389 +2500,38 @@ namespace Demo
 
     #endregion
 
-    #region Connect Button
+    #region Log Notification
 
-        private async void ConnectButton_Clicked(object sender, EventArgs e)
+        private void LogNotification()
         {
-            ConnectButton.IsEnabled = false;
+            String NotificationMessage = BlueFire.NotificationMessage;
+            ErrorException = BlueFire.ErrorException;
 
-            StartServiceButton.IsEnabled = false;
-            StopServiceButton.IsEnabled = false;
-
-            SecureAdapterSwitch.IsEnabled = false;
-
-            UpdateButton.IsEnabled = false;
-            SendButton.IsEnabled = false;
-
-            // Check for connecting
-            if (IsConnectButton)
+            if (NotificationMessage != "")
             {
-                IsConnecting = true;
-                IsConnected = false;
+                if (BlueFire.NotificationLocation != "")
+                    NotificationMessage = BlueFire.NotificationLocation + " - " + NotificationMessage;
 
-                ShowStatus("Connecting...");
+                BlueFire.ClearNotificationMessage();
 
-                ClearMessage();
-
-                ShowDisconnectButton();
-
-                BlueFire.UseBLE = BLESwitch.IsToggled;
-                BlueFire.UseBT2 = BT2Switch.IsToggled;
-
-                BlueFire.IgnoreJ1939 = !J1939Switch.IsToggled; // is opposite
-                BlueFire.IgnoreJ1708 = !J1708Switch.IsToggled; // is opposite
-
-                Boolean Synchronized = true; // test synchronized connection
-                //BlueFire.ConnectTimeout = 2000; // default is 1000 (one second)
-
-                await BlueFire.Connect(Synchronized);
-            }
-            else // Disconnecting
-            {
-                await DisconnectAdapter(true);
-            }
-        }
-
-        private void ShowConnectButton()
-        {
-            IsConnectButton = true;
-            ConnectButton.Text = "Connect";
-
-            ConnectButton.IsEnabled = true;
-            StartServiceButton.IsEnabled = true;
-            StopServiceButton.IsEnabled = true;
-        }
-
-        private void ShowDisconnectButton()
-        {
-            IsConnectButton = false;
-            ConnectButton.Text = "Disconnect";
-
-            ConnectButton.IsEnabled = true;
-        }
-
-        private async Task DisconnectAdapter(Boolean WaitForDisconnect)
-        {
-            switch (ConnectionState)
-            {
-                // Check for cancelling a connection attempt
-                case ConnectionStates.Discovering:
-                case ConnectionStates.Connecting:
-                case ConnectionStates.Reconnecting:
-                case ConnectionStates.Ready:
-                    await BlueFire.CancelConnecting();
-                    break;
-
-                // Check for already connected
-                case ConnectionStates.Connected:
-                case ConnectionStates.Reconnected:
-                case ConnectionStates.Authenticating:
-                case ConnectionStates.Authenticated:
-                case ConnectionStates.RetrievingData:
-                case ConnectionStates.DataAvailable:
-                    await BlueFire.Disconnect(WaitForDisconnect);
-                    break;
-
-                // already disconnecting or not connected
-                default:
-                    AdapterNotConnected();
-                    break;
-            }
-        }
-
-        #endregion
-
-    #region Service Buttons
-
-        private async void StartServiceButton_Clicked(object sender, EventArgs e)
-        {
-            if (DemoService == null)
-            {
-                DemoService = new Service();
-            }
-            await DemoService.StartService();
-
-            StartServiceButton.IsEnabled = false;
-            StopServiceButton.IsEnabled = true;
-
-            ConnectButton.IsEnabled = false;
-            UpdateButton.IsEnabled = false;
-            SendButton.IsEnabled = false;
-        }
-
-        private async void StopServiceButton_Clicked(object sender, EventArgs e)
-        {
-            if (DemoService == null)
-                return;
-
-            await DemoService.StopService();
-
-            StartServiceButton.IsEnabled = true;
-            StopServiceButton.IsEnabled = false;
-
-            ConnectButton.IsEnabled = true;
-            UpdateButton.IsEnabled = true;
-            SendButton.IsEnabled = true;
-        }
-
-    #endregion
-
-    #region Update Button
-
-        // Adapter settings
-        private void UpdateButton_Clicked(object sender, EventArgs e)
-        {
-            // LED Brightness
-            Byte LedBrightness;
-
-            ClearMessage();
-
-            if (!Byte.TryParse(LedBrightnessEntry.Text, out LedBrightness) || LedBrightness < 5 || LedBrightness > 100)
-            {
-                ShowMessage("Invalid LED Brightness");
-                return;
-            }
-            BlueFire.LedBrightness = LedBrightness;
-
-            // Security
-            Boolean SecureAdapter = SecureAdapterSwitch.IsToggled;
-
-            String UserName = UserNameEntry.Text.Trim();
-            String Password = PasswordEntry.Text.Trim();
-
-            if (UserName.Length > 20)
-            {
-                ShowMessage("Invalid User Name");
-                return;
-            }
-            if (Password.Length > 12)
-            {
-                ShowMessage("Invalid Password");
-                return;
-            }
-
-            BlueFire.UpdateSecurity(SecureAdapter, UserName, Password);
-        }
-
-        #endregion
-
-    #region Send Button
-
-        // Proprietary PGN Monitoring/Sending
-        private void SendButton_Clicked(object sender, EventArgs e)
-        {
-            IsSendingPGN = false;
-            IsMonitoringPGN = false;
-
-            // Get PGN
-            if (!Int32.TryParse("0" + PGNEntry.Text.Trim(), out PGN))
-            {
-                ShowMessage("PGN must be numeric.");
-                return;
-            }
-
-            // Ignore if no PGN
-            if (PGN == 0)
-                return;
-
-            // Get PGN Data
-            Byte[] PGNBytes = new Byte[8];
-
-            String PGNData = PGNDataEntry.Text.Trim();
-
-            if (PGNData.Length == 0) // Monitor a PGN
-            {
-                Int32 Source = 0; // engine
-                IsMonitoringPGN = true;
-                BlueFire.MonitorPGN(Source, PGN);
-            }
-            else // Send a PGN
-            {
-                // Edit the PGN Data to be 16 hex characters (8 bytes)
-                if (PGNData.Length != 16)
-                {
-                    ShowMessage("PGN Data must be 16 hex characters (8 bytes).");
-                    return;
-                }
-
-                // Convert the PGN Data hex string to bytes
-                try
-                {
-                    for (int i = 0; i < 8; i++)
-                        PGNBytes[i] = Byte.Parse(PGNData.Substring(i * 2, 2), NumberStyles.HexNumber);
-                }
-                catch
-                {
-                    ShowMessage("PGN must be numeric.");
-                    return;
-                }
-
-                // Send the PGN
-                IsSendingPGN = true;
-                BlueFire.SendPGN(PGN, PGNBytes);
+                WriteLog(NotificationMessage);
             }
         }
 
     #endregion
 
-    #region Next Fault Button
+    #region Log Adapter Message
 
-        private void NextFaultButton_Clicked(object sender, EventArgs e)
+        private void LogAdapterMessage()
         {
-            FaultIndex++;
-            if (FaultIndex == BlueFire.Truck.ActiveFaultsCount)
-                FaultIndex = 0;
+            String AdapterMessage = BlueFire.AdapterMessage;
+
+            BlueFire.ClearAdapterMessage();
+
+            WriteLog(AdapterMessage);
         }
 
     #endregion
-
-    #region Reset Fault Button
-
-        private async void ResetFaultButton_Clicked(object sender, EventArgs e)
-        {
-            await BlueFire.ResetFaults();
-        }
-
-    #endregion
-
-    #region Truck Button
-
-        // Truck Data
-        private async void TruckButton_Clicked(object sender, EventArgs e)
-        {
-            // Clear message
-            ClearMessage();
-
-            // Clear any previous adapter data retrieval
-            await BlueFire.ClearData();
-
-            HideELDPage();
-
-            AdapterLayout.IsVisible = false;
-            TruckLayout.IsVisible = true;
-
-            NextButton.IsVisible = true;
-            PrevButton.IsVisible = true;
-
-            GroupNo = 0; // so it increments to 0
-
-            await GetTruckData();
-        }
-
-        #endregion
-
-    #region Next/Prev Buttons
-
-        // Next Truck Data
-        private async void NextButton_Clicked(object sender, EventArgs e)
-        {
-            // Clear message
-            ClearMessage();
-
-            // Clear any previous adapter data retrieval
-            await BlueFire.ClearData();
-
-            // Show next page
-            await ShowTruckPages();
-        }
-
-        // Previous Truck Data
-        private async void PrevButton_Clicked(object sender, EventArgs e)
-        {
-            // Clear message
-            ClearMessage();
-
-            // Clear any previous adapter data retrieval
-            await BlueFire.ClearData();
-
-            // Show previous pge
-            await ShowTruckPages(true);
-        }
-
-    #region Show Truck Pages
-
-        private async Task ShowTruckPages(Boolean ShowPrevious = false)
-        {
-            if (ShowPrevious)
-                GroupNo--;
-            else
-                GroupNo++;
-
-            if (GroupNo > MaxGroupNo)
-                GroupNo = 0;
-
-            else if (GroupNo < 0)
-                GroupNo = MaxGroupNo;
-
-            await GetTruckData();
-        }
-
-    #endregion
-
-    #endregion
-
-    #region ELD Button
-
-        // ELD Recording
-        private async void ELDButton_Clicked(object sender, EventArgs e)
-        {
-            // Clear message
-            ClearMessage();
-
-            // Clear any previous adapter data retrieval
-            await BlueFire.ClearData();
-
-            AdapterLayout.IsVisible = false;
-            TruckLayout.IsVisible = false;
-
-            NextButton.IsVisible = false;
-            PrevButton.IsVisible = false;
-
-            ShowELDPage();
-        }
-
-    #endregion
-
-    #region Show ELD Page
-
-        private void ShowELDPage()
-        {
-            AdapterLayout.IsVisible = false;
-            TruckLayout.IsVisible = false;
-
-            ELDLayout.IsVisible = true;
-
-            ClearELDPage();
-
-            CheckStreaming();
-
-            if (!ELD.IsCompatibleAdapter)
-            {
-                ShowMessage("ELD is not available with your current adapter.");
-                return;
-            }
-
-            // Get current record
-            CurrentRecordNo = -1;
-
-            ELD.GetCurrentRecord();
-
-            SetELDButtons();
-        }
-
-        private void HideELDPage()
-        {
-            if (!ELDLayout.IsVisible)
-                return;
-
-            EditELDData();
-
-            ELDLayout.IsVisible = false;
-
-            OnELDPageDisappearing();
-        }
-
-        #endregion
 
     #region Log Error
 
@@ -2270,10 +2558,14 @@ namespace Demo
             // Write the message to a log file.
             // TODO - must implement this in an actual app.
 
-#if (WINDOWS_UWP)
+            ShowMessages(Message);
+
+#if (DEBUG)
+    #if (WINDOWS_UWP)
             Debug.WriteLine(Message);
-#else
+    #else
             Debug.Print(Message);
+    #endif
 #endif
         }
 

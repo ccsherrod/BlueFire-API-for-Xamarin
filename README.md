@@ -96,3 +96,44 @@ Version 2.4:<ul>
 	<li>Modified the Demo app to reflect the above changes.
 	<li>Fixed issue with API attempting to reconnect when disconnecting immediately after connecting.
 	<li>Uses the latest BlueFire 4.8 core libraries.
+	
+Version 3.0:<ul>
+	<li>Removed all truck data methods and replaced them with the GetPIDs method.
+	<li>Renamed AdapterId property to DeviceAddress (to be consistent with the BlueFire core libraries).
+	<li>Renamed AdapterIdFilter property to DeviceAddressFilter.
+	<li>Renamed PerformanceMode property to IsPerformanceModeOn.
+	<li>Added PerformanceInterval property that sets the interval for PerformanceMode. The default is 500 ms.
+	<li>Added IsJ1708Available property that indicates if the J1708 data bus is available.
+	<li>Added HardwareType property with values HardwareTypes.HW_1_1 (old adapter), HW_6_Pin, and HW_9_Pin.
+	<li>Added IsHeartbeatOn property that will turn the Adapter heartbeat on/off. Use with caution. The default is On.
+	<li>Added IsNotificationsOn property that will turn Adapter and API notifications on/off. The default is Off.
+	<li>Added OptimizeDataRetrieval property that optimizes retrieval of data when the same data is available from both J1939 and J1708 ECMs. The default is Off. Recommend On.
+    <li>Added BluetoothRecycleAttempt property that will recycle (turn off/on) Bluetooth at the specified connection and reconnection attempt. The default is 2 (second attempt).
+	<li>Added Notification ConnectionState that will return any API notifications.
+    <li>Added ELDConnected ConnectionState that will be raised after the API receives ELD startup data from the adapter.
+	<li>Added AdapterMessage ConnectionState that will be raised when there is a message from the Adapter.
+	<li>Added IncompatibleAPI ConnectionState that will be raised if the API is not compatible with the Adapter.
+	<li>Renamed IncompatibleVersion ConnectionState to IncompatibleAdapter.
+	<li>Removed Connected ConnectionState as this was confusing because it only appled to the Bluetooth connection and not the Adapter connection.
+	<li>Removed Ready ConnectionState since the Authenticated ConnectionState is raised when Ready use to be.
+    <li>The ConnectionState Authenticated will now be raised after the API receives startup data from the adapter. This data includes PerformanceMode, SleepMode, LEDBrightness, IgnoreJ1939, IgnoreJ1708, HardwareType and any messages.
+    <li>The UseBLE, UseBT2, IgnoreJ1939, and IgnoreJ1708 settings will be set appropriately if the HardwareType is HW_6_Pin.
+	<li>The MaxConnectAttempts property now works for BLE adapters.
+    <li>The MaxConnectAttempts property default value is changed from 10 to 5;
+	<li>Removed the ELD Waiting RecordId as it is no longer sent by the Adapter.
+	<li>Added ELD StartUpload and StopUpload methods that must be called prior to and after retrieving ELD records (only for Firmware 3.11-13).
+    <li>Added Security setting Secure Device which secures the device (phone, tablet, etc) to an adapter. One device can be secured to many adapters (one to many relationship).
+    <li>Security setting Secure Adapter remains unchanged and secures the device to a single adapter and secures the adapter to the one device (one to one relationship).)
+    <li>Security setting UserName and Password secures the device to an adapter. A device can be secured to many adapters and many adapters can be secured to a device (many to many relationship).
+    <li>Security (UserName, Password, Adapter Id, Device Id) are all encrypted with AES encryption.
+	<li>Security authentication is performed in the adapter with Adapter Firmware 3.14.
+    <li>Requires Adapter Firmware 3.14 for all security updates.
+	<li>Better J1708 data retrieval with Firmware 3.13+.
+	<li>More reliable BLE connection.
+	<li>Faster BLE re-connections.
+	<li>Faster BLE initial connection if using ConnectToLastAdapter.
+	<li>Improved API and Adapter error reporting to the app.
+	<li>Updated the Demo app and Service to demonstrate the above changes.
+	<li>The ConnectionState Ready in the Demo app is replaced with ConnectionState Authenticated.
+	<li>Added a Stress Test button to the Demo app that retrieves all the data to test loading the connection.
+	<li>Uses the latest BlueFire 4.10 core libraries.
