@@ -62,6 +62,7 @@ Version 2.0:<ul>
 	<li>Fixed a few data retrieval bugs.
 	<li>Added a section in the API doc for Adapter LEDs.
 	<li>Rearranged the sections in the API documentation.
+</ul>
 
 Version 2.1:<ul>
 	<li>Fixed J1708 not retrieving all data requested.
@@ -73,6 +74,7 @@ Version 2.2:<ul>
 	<li>Requires Adapter Firmware Beta 3.10.9.
 	<li>ELD rules are sent to the Adapter from the API.
 	<li>The Adapter will reboot after ELD StopEngine if the App is not connected.
+</ul>
 
 Version 2.3:<ul>
 	<li>Compatible with Adapter Firmware 3.11. Note, Firmware 3.10 is broken and must be updated to 3.11.
@@ -84,6 +86,7 @@ Version 2.3:<ul>
 	<li>Added property AdvertisementTimeout.
 	<li>For BLE adapters, if the ConnectToLastAdapter and UpdateSecurity (SecureAdapter) are not set, the API will connect to the adapter with the strongest signal.
 	<li>Uses the latest BlueFire 4.7 core libraries.
+</ul>
 
 Version 2.4:<ul>
 	<li>Added a Service class that simulates the API used with a service.
@@ -96,6 +99,7 @@ Version 2.4:<ul>
 	<li>Modified the Demo app to reflect the above changes.
 	<li>Fixed issue with API attempting to reconnect when disconnecting immediately after connecting.
 	<li>Uses the latest BlueFire 4.8 core libraries.
+</ul>
 	
 Version 3.0:<ul>
 	<li>Removed all truck data methods and replaced them with the GetPIDs method.
@@ -137,3 +141,4 @@ Version 3.0:<ul>
 	<li>The ConnectionState Ready in the Demo app is replaced with ConnectionState Authenticated.
 	<li>Added a Stress Test button to the Demo app that retrieves all the data to test loading the connection.
 	<li>Uses the latest BlueFire 4.10 core libraries.
+</ul>
