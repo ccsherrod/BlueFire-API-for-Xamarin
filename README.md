@@ -69,6 +69,7 @@ Version 2.1:<ul>
     <li>Added SignalStrength (RSSI) property.
     <li>Removed the need for Android Activity.
     <li>ELD.IsStreaming no longer starts or stops streaming. Use Start/Stop Streaming methods.
+</ul>
 
 Version 2.2:<ul>
 	<li>Requires Adapter Firmware Beta 3.10.9.
