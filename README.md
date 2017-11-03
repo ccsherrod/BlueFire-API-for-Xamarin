@@ -118,11 +118,12 @@ Version 3.0:<ul>
     <li>Added ELDConnected ConnectionState that will be raised after the API receives ELD startup data from the adapter.
 	<li>Added AdapterMessage ConnectionState that will be raised when there is a message from the Adapter.
 	<li>Added IncompatibleAPI ConnectionState that will be raised if the API is not compatible with the Adapter.
+	<li>Added J1939Starting and J1708Restarting ConnectionStates that will be raised when adapter is starting J1939 or restarting J1708.
 	<li>Renamed IncompatibleVersion ConnectionState to IncompatibleAdapter.
 	<li>Removed Connected ConnectionState as this was confusing because it only appled to the Bluetooth connection and not the Adapter connection.
 	<li>Removed Ready ConnectionState since the Authenticated ConnectionState is raised when Ready use to be.
-    <li>The ConnectionState Authenticated will now be raised after the API receives startup data from the adapter. This data includes PerformanceMode, SleepMode, LEDBrightness, IgnoreJ1939, IgnoreJ1708, HardwareType and any messages.
-    <li>The UseBLE, UseBT2, IgnoreJ1939, and IgnoreJ1708 settings will be set appropriately if the HardwareType is HW_6_Pin.
+    <li>The Authenticated ConnectionState will now be raised after the API receives startup data from the adapter. This data includes PerformanceMode, SleepMode, LEDBrightness, IgnoreJ1939, IgnoreJ1708, HardwareType and any messages.
+    <li>The IgnoreJ1939, and IgnoreJ1708 settings will be set appropriately if the HardwareType is HW_6_Pin.
 	<li>The MaxConnectAttempts property now works for BLE adapters.
     <li>The MaxConnectAttempts property default value is changed from 10 to 5;
 	<li>Removed the ELD Waiting RecordId as it is no longer sent by the Adapter.
