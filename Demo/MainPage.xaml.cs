@@ -17,7 +17,7 @@ namespace Demo
         private Service DemoService;
 
         private Int32 GroupNo;
-        private const Int32 MaxGroupNo = 7;
+        private const Int32 MaxGroupNo = 8;
 
         private JPIDs[] Pids; // for sending J1939/J1587 Pids to the adapter
 
@@ -1258,7 +1258,31 @@ namespace Demo
 
                     break;
 
-                case 6:
+                case 6: // special for ELD
+                    TextView1.Text = "RPM";
+                    TextView2.Text = "Speed";
+                    TextView3.Text = "Distance";
+                    TextView4.Text = "Odometer";
+                    TextView5.Text = "Total Hours";
+                    TextView6.Text = "";
+                    TextView7.Text = "";
+
+                    if (!IsStressTesting)
+                    {
+                        // Set RPM and Speed to always return data on a one second interval
+                        await BlueFire.GetPID(JPIDs.RPM, Const.OneSecond, RequestTypes.OnInterval);
+                        await BlueFire.GetPID(JPIDs.Speed, Const.OneSecond, RequestTypes.OnInterval);
+
+                        // Set Distance and hours to return only on change at longer intervals.
+                        // Note, odometer is the same as distance just from a different source (OEM ECM).
+                        await BlueFire.GetPID(JPIDs.Distance, 5 * Const.OneSecond, RequestTypes.OnChange);
+                        await BlueFire.GetPID(JPIDs.HiResDistance, 5 * Const.OneSecond, RequestTypes.OnChange);
+                        await BlueFire.GetPID(JPIDs.TotalHours, 10 * Const.OneSecond, RequestTypes.OnChange);
+                    }
+
+                    break;
+
+                case 7:
                     TextView1.Text = "VIN";
                     TextView2.Text = "Make";
                     TextView3.Text = "Model";
@@ -1284,7 +1308,7 @@ namespace Demo
 
                     break;
 
-                case 7:
+                case 8:
                     TextView1.Text = "Source";
                     TextView2.Text = "SPN";
                     TextView3.Text = "FMI";
@@ -1377,7 +1401,17 @@ namespace Demo
                     DataView7.Text = FormatSingle(MaxSpeed, 0);
                     break;
 
-                case 6:
+                case 6: // special for ELD
+                    DataView1.Text = FormatInt32(BlueFire.Truck.RPM);
+                    DataView2.Text = FormatSingle(BlueFire.Truck.Speed, 0);
+                    DataView3.Text = FormatSingle(BlueFire.Truck.Distance, 0);
+                    DataView4.Text = FormatSingle(BlueFire.Truck.Odometer, 0);
+                    DataView5.Text = FormatSingle(BlueFire.Truck.TotalHours, 2);
+                    DataView6.Text = "";
+                    DataView7.Text = "";
+                    break;
+
+                case 7:
                     DataView1.Text = BlueFire.Truck.EngineVIN;
                     DataView2.Text = BlueFire.Truck.Engine.Make;
                     DataView3.Text = BlueFire.Truck.Engine.Model;
@@ -1395,7 +1429,7 @@ namespace Demo
 
                     break;
 
-                case 7:
+                case 8:
 
                     String Source = "";
                     String SPN = "";

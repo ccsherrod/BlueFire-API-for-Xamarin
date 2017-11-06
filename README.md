@@ -144,3 +144,8 @@ Version 3.0:<ul>
 	<li>Added a Stress Test button to the Demo app that retrieves all the data to test loading the connection.
 	<li>Uses the latest BlueFire 4.10 core libraries.
 </ul>
+
+Version 3.1:<ul>
+	<li>Added a special ELD truck data group 6 that retrieves data with different settings.
+	<li>Updated to the latest Xamarin Forms (2.4.0.38779).
+</ul>
