@@ -69,10 +69,13 @@ namespace Demo
 
         private async Task SimulateService()
         {
+            // Initialize the service 
             await Initialize();
 
+            // Connect to the adapter
             await Connect();
 
+            // Simulate service is running
             while (ServiceIsRunning)
             {
                 // Allow API processes (eg. Bluetooth) 
@@ -82,11 +85,14 @@ namespace Demo
 
         public async Task StopService()
         {
+            // Cancel simulated service
             ServiceIsRunning = false;
             ServiceToken.Cancel();
 
+            // Disconnect from the adapter
             await Disconnect();
 
+            // End the service
             await BlueFire.EndAppService();
         }
 
@@ -94,6 +100,9 @@ namespace Demo
         {
             // Initialize BlueFire API
             await BlueFire.Initialize();
+
+            // Don't kill the service
+            BlueFire.KillAppService = false;
 
             // Clear adapter id filter
             BlueFire.DeviceAddressFilter.Clear();

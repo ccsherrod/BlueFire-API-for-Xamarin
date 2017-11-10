@@ -161,9 +161,6 @@ namespace Demo
 
         private async void Initialize()
         {
-            // Set to kill app on exiting
-            //BlueFire.KillApp = true;
-
             // Connect button
             IsConnectButton = true;
 
@@ -177,6 +174,9 @@ namespace Demo
 
             // Initialize BlueFire API
             await BlueFire.Initialize();
+
+            // Set to kill app on exiting
+            BlueFire.KillAppService = true;
 
             // Clear adapter id filter
             BlueFire.DeviceAddressFilter.Clear();
@@ -283,7 +283,7 @@ namespace Demo
             // Windows Mobile does not raise the suspend event which raises the app terminate event
             // so we have to set to kill the app here.
             if (BlueFire.IsDeviceMobile)
-                BlueFire.KillApp = true;
+                BlueFire.KillAppService = true;
 #endif
             // End the application.
             // Note, this will save the settings.
@@ -875,6 +875,9 @@ namespace Demo
             DemoService = null;
 
             IsServiceRunning = false;
+
+            // Re-initialze for app processing
+            Initialize();
 
             StartServiceButton.IsEnabled = true;
 

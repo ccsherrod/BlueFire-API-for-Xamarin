@@ -152,6 +152,8 @@ Version 3.1:<ul>
 
 Version 3.2:<ul>
 	<li>Renamed API method EndApplication to EndAppService.
+	<li>Renamed API property KillApp to KillAppService.
+	<li>Added setting KillAppService to App Demo and Service.
 	<li>Updated the Demo App and Service to allow the simulated Service to connect and retrieve data.
 	<li>Updated the Demo App to show a static snapshot of the data the Service is retrieving.
 </ul>
