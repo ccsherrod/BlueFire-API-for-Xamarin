@@ -149,3 +149,9 @@ Version 3.1:<ul>
 	<li>Added a special ELD truck data group 6 that retrieves data with different settings.
 	<li>Updated to the latest Xamarin Forms (2.4.0.38779).
 </ul>
+
+Version 3.2:<ul>
+	<li>Renamed API method EndApplication to EndAppService.
+	<li>Updated the Demo App and Service to allow the simulated Service to connect and retrieve data.
+	<li>Updated the Demo App to show a static snapshot of the data the Service is retrieving.
+</ul>

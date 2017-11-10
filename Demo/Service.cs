@@ -63,6 +63,7 @@ namespace Demo
 
             ServiceToken = null; // free up any previous token
             ServiceToken = new CancellationTokenSource(); // must always be new
+
             await Task.Factory.StartNew(async () => await SimulateService(), ServiceToken.Token);
         }
 
@@ -72,7 +73,11 @@ namespace Demo
 
             await Connect();
 
-            while (ServiceIsRunning) ;
+            while (ServiceIsRunning)
+            {
+                // Allow API processes (eg. Bluetooth) 
+                await Task.Delay(10);
+            }
         }
 
         public async Task StopService()
@@ -82,12 +87,11 @@ namespace Demo
 
             await Disconnect();
 
-            await BlueFire.EndApplication();
+            await BlueFire.EndAppService();
         }
 
         private async Task Initialize()
         {
-            // Connect button
             // Initialize BlueFire API
             await BlueFire.Initialize();
 
@@ -164,7 +168,7 @@ namespace Demo
             }
         }
 
-        #endregion
+    #endregion
 
     #region API Event Handler
 
@@ -328,6 +332,9 @@ namespace Demo
                     LogStatus(State.ToString());
                     break;
             }
+
+            // Allow App to stop the service
+            await Task.Delay(10);
         }
 
     #endregion

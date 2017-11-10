@@ -49,6 +49,7 @@ namespace Demo
 
         private event API.AppEventHandler AppHandlerEvent;
 
+        private Boolean IsServiceRunning;
         private Boolean IsStressTesting;
         private Boolean IsRetrievingVINInfo;
 
@@ -160,6 +161,9 @@ namespace Demo
 
         private async void Initialize()
         {
+            // Set to kill app on exiting
+            //BlueFire.KillApp = true;
+
             // Connect button
             IsConnectButton = true;
 
@@ -845,11 +849,12 @@ namespace Demo
 
             StartServiceButton.IsEnabled = false;
 
+            IsServiceRunning = true;
+
             await DemoService.StartService();
 
             StopServiceButton.IsEnabled = true;
 
-            TruckButton.IsEnabled = false;
             ELDButton.IsEnabled = false;
             StressTestButton.IsEnabled = false;
 
@@ -867,9 +872,12 @@ namespace Demo
 
             await DemoService.StopService();
 
+            DemoService = null;
+
+            IsServiceRunning = false;
+
             StartServiceButton.IsEnabled = true;
 
-            TruckButton.IsEnabled = true;
             ELDButton.IsEnabled = true;
             StressTestButton.IsEnabled = true;
 
@@ -1008,7 +1016,7 @@ namespace Demo
             ClearMessages();
 
             // Clear any previous adapter data retrieval
-            if (!IsStressTesting)
+            if (!IsServiceRunning && !IsStressTesting)
                 await BlueFire.ClearData();
 
             await ShowTruckLayout();
@@ -1110,7 +1118,7 @@ namespace Demo
             FaultLayout.IsVisible = false;
 
             // Clear any previous adapter data
-            if (!IsStressTesting)
+            if (!IsServiceRunning && !IsStressTesting)
                 await BlueFire.ClearData();
 
             switch (GroupNo)
@@ -1123,6 +1131,12 @@ namespace Demo
                     TextView5.Text = "Pct Torque";
                     TextView6.Text = "Driver Torque";
                     TextView7.Text = "Torque Mode";
+
+                    if (IsServiceRunning)
+                    {
+                        ShowTruckData();
+                        break;
+                    }
 
                     if (!IsStressTesting)
                     {
@@ -1148,6 +1162,12 @@ namespace Demo
                     TextView6.Text = "     HiRes";
                     TextView7.Text = "     LoRes";
 
+                    if (IsServiceRunning)
+                    {
+                        ShowTruckData();
+                        break;
+                    }
+
                     if (!IsStressTesting)
                     {
                         Pids = new JPIDs[3];
@@ -1167,6 +1187,12 @@ namespace Demo
                     TextView5.Text = "Current Gear";
                     TextView6.Text = "Selected Gear";
                     TextView7.Text = "Battery Volts";
+
+                    if (IsServiceRunning)
+                    {
+                        ShowTruckData();
+                        break;
+                    }
 
                     if (!IsStressTesting)
                     {
@@ -1190,6 +1216,12 @@ namespace Demo
                     TextView5.Text = "Avg Fuel Econ";
                     TextView6.Text = "Inst Fuel Econ";
                     TextView7.Text = "Throttle Pos";
+
+                    if (IsServiceRunning)
+                    {
+                        ShowTruckData();
+                        break;
+                    }
 
                     if (!IsStressTesting)
                     {
@@ -1215,6 +1247,12 @@ namespace Demo
                     TextView6.Text = "Coolant Pres";
                     TextView7.Text = "Coolant Level";
 
+                    if (IsServiceRunning)
+                    {
+                        ShowTruckData();
+                        break;
+                    }
+
                     if (!IsStressTesting)
                     {
                         Pids = new JPIDs[7];
@@ -1238,6 +1276,12 @@ namespace Demo
                     TextView5.Text = "Cruise State";
                     TextView6.Text = "Cruise Speed";
                     TextView7.Text = "Max Speed";
+
+                    if (IsServiceRunning)
+                    {
+                        ShowTruckData();
+                        break;
+                    }
 
                     // Restart stress test after retrieving VIN/Info data
                     if (IsStressTesting && IsRetrievingVINInfo)
@@ -1267,6 +1311,12 @@ namespace Demo
                     TextView6.Text = "";
                     TextView7.Text = "";
 
+                    if (IsServiceRunning)
+                    {
+                        ShowTruckData();
+                        break;
+                    }
+
                     if (!IsStressTesting)
                     {
                         // Set RPM and Speed to always return data on a one second interval
@@ -1290,6 +1340,12 @@ namespace Demo
                     TextView5.Text = "Unit No";
                     TextView6.Text = "";
                     TextView7.Text = "";
+
+                    if (IsServiceRunning)
+                    {
+                        ShowTruckData();
+                        break;
+                    }
 
                     IsRetrievingVINInfo = true;
 
@@ -1316,6 +1372,12 @@ namespace Demo
                     TextView5.Text = "Conversion";
                     TextView6.Text = "";
                     TextView7.Text = "";
+
+                    if (IsServiceRunning)
+                    {
+                        ShowTruckData();
+                        break;
+                    }
 
                     // Restart stress test after retrieving VIN/Info data
                     if (IsStressTesting && IsRetrievingVINInfo)
@@ -2625,7 +2687,7 @@ namespace Demo
             BlueFire.IgnoreJ1939 = !J1939Switch.IsToggled;
             BlueFire.IgnoreJ1708 = !J1708Switch.IsToggled;
 
-            await BlueFire.EndApplication(); 
+            await BlueFire.EndAppService(); 
         }
 
     #endregion
