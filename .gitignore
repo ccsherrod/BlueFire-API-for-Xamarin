@@ -31,11 +31,11 @@ x86/
 # [Bb]in/
 bin/
 # !Demo.UWP/bin/
-Demo.UWP/bin/*
+# Demo.UWP/bin/*
 # !Demo.UWP/bin/*
-Demo.UWP/bin/*/*
+# Demo.UWP/bin/*/*
 # !Demo.UWP/bin/*/Release
-Demo.UWP/bin/*/Release/*
+# Demo.UWP/bin/*/Release/*
 # !Demo.UWP/bin/*/Release/*.appx
 
 # BlueFire API Library
