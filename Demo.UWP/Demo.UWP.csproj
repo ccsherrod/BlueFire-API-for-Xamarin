@@ -18,11 +18,14 @@
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PackageCertificateKeyFile>Demo.UWP_TemporaryKey.pfx</PackageCertificateKeyFile>
-    <SccProjectName>"%24/BlueFire/Xamarin/Xamarin/API/BlueFire-API-for-Xamarin", QVHBAAAA</SccProjectName>
-    <SccLocalPath>..</SccLocalPath>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
     <SccAuxPath>
     </SccAuxPath>
-    <SccProvider>MSSCCI:Microsoft Visual SourceSafe</SccProvider>
+    <SccProvider>
+    </SccProvider>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>x86|x64|arm</AppxBundlePlatforms>
@@ -163,10 +166,10 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\UWP\UWP.csproj">
-      <Project>{dad4d451-d33e-4852-8501-3fe1f53cfdd8}</Project>
-      <Name>UWP</Name>
-    </ProjectReference>
+    <Reference Include="BlueFire.UWP, Version=0.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Library\UWP\x64\BlueFire.UWP.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="..\Demo\Demo.projitems" Label="Shared" />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">

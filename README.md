@@ -157,3 +157,7 @@ Version 3.2:<ul>
 	<li>Updated the Demo App and Service to allow the simulated Service to connect and retrieve data.
 	<li>Updated the Demo App to show a static snapshot of the data the Service is retrieving.
 </ul>
+
+Version 3.3:<ul>
+	<li>Updated to the latest NuGet packages and Xamarin Forms (2.4.0.74863).
+</ul>

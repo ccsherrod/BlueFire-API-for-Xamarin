@@ -2,10 +2,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="SharedProjectFile_SccProperties">
     <SharedProjectFile_ProjectGuid>{bb0cae82-3c0b-4bd5-b614-19739e22913c}</SharedProjectFile_ProjectGuid>
-    <SharedProjectFile_SccProjectName>"%24/BlueFire/Xamarin/Xamarin/API/BlueFire-API-for-Xamarin", QVHBAAAA</SharedProjectFile_SccProjectName>
-    <SharedProjectFile_SccAuxPath />
-    <SharedProjectFile_SccLocalPath>..</SharedProjectFile_SccLocalPath>
-    <SharedProjectFile_SccProvider>MSSCCI:Microsoft Visual SourceSafe</SharedProjectFile_SccProvider>
   </PropertyGroup>
   <PropertyGroup>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>

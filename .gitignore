@@ -30,13 +30,13 @@ x86/
 # [Rr]elease/
 # [Bb]in/
 bin/
-!Demo.UWP/bin/
+# !Demo.UWP/bin/
 Demo.UWP/bin/*
-!Demo.UWP/bin/*
+# !Demo.UWP/bin/*
 Demo.UWP/bin/*/*
-!Demo.UWP/bin/*/Release
+# !Demo.UWP/bin/*/Release
 Demo.UWP/bin/*/Release/*
-!Demo.UWP/bin/*/Release/*.appx
+# !Demo.UWP/bin/*/Release/*.appx
 
 # BlueFire API Library
 # Note, this must be after the x64/ and x86/ excludes above
