@@ -158,3 +158,21 @@ Version 3.2:<ul>
 Version 3.3:<ul>
 	<li>Updated to the latest NuGet packages and Xamarin Forms (2.4.0.74863).
 </ul>
+
+Version 3.4:<ul>
+	<li>Added support for OBD2.
+	<li>Renamed JPIDs to BFPIDs.
+	<li>Added property IgnoreOBD2.
+	<li>Added property Force500kBus.
+	<li>Added property OBDCANSetting.
+	<li>Added property SendAllPackets.
+	<li>Added property DisconnectedReboot.
+	<li>Added ConnectionState Heatbeat.
+	<li>Renamed BFPIDs.AccPedPos to AccPedalPos.
+	<li>Renamed ConnectionState J1939Starting to CANStarting.
+	<li>Setting both UseBLE and UseBT21 on will cause the API to auto discover the Adapter (same as if they are both set off).
+	<li>If UseBLE/UseBT21 are changed, or both set, or both not set, the API will reset the Previous Device Address, Discovery Timeout, and Advertisement Timeout.
+	<li>Updated the Demo App to reflect the above changes.
+	<li>Updated with the latest BlueFire 4.12 core libraries.
+	<li>Updated to the latest NuGet packages and Xamarin Forms (2.5.0.122203).
+</ul>
