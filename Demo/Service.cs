@@ -22,7 +22,7 @@ namespace Demo
         private Int32 GroupNo;
         private const Int32 MaxGroupNo = 7;
 
-        private JPIDs[] Pids; // for sending J1939/J1587 Pids to the adapter
+        private BFPIDs[] Pids; // for sending J1939/J1587 Pids to the adapter
 
         private Int32 RetrievalInterval;
         private RequestTypes RequestType;
@@ -37,6 +37,7 @@ namespace Demo
         private Byte LedBrightness = 100;
         private Boolean IgnoreJ1939 = false;
         private Boolean IgnoreJ1708 = false;
+        private Boolean IgnoreOBD2 = false;
 
         private Boolean ServiceIsRunning;
         private CancellationTokenSource ServiceToken;
@@ -118,15 +119,18 @@ namespace Demo
             BlueFire.IsNotificationsOn = false;
             BlueFire.IsPerformanceModeOn = false;
 
+            BlueFire.SendAllPackets = true;
+
             BlueFire.OptimizeDataRetrieval = true; // recommended
 
             // Set Bluetooth settings
-            BlueFire.UseBT2 = false;
             BlueFire.UseBLE = true;
+            BlueFire.UseBT2 = false;
 
             // Set adapter databus settings
             BlueFire.IgnoreJ1939 = false;
             BlueFire.IgnoreJ1708 = true;
+            BlueFire.IgnoreOBD2 = true;
         }
 
     #endregion
@@ -254,8 +258,8 @@ namespace Demo
                     LogStatus(State.ToString());
                     break;
 
-                case ConnectionStates.J1939Starting:
-                    LogMessage("J1939 is starting, CAN bus speed is " + BlueFire.CanBusSpeed + ".");
+                case ConnectionStates.CANStarting:
+                    LogMessage("The Adapter is connected to the " + BlueFire.CanBusToString() + ".");
                     await GetTruckData();
                     break;
 
@@ -478,9 +482,15 @@ namespace Demo
                 IgnoreJ1708 = BlueFire.IgnoreJ1708;
                 // Save this if need be
             }
+
+            if (IgnoreOBD2 != BlueFire.IgnoreOBD2)
+            {
+                IgnoreOBD2 = BlueFire.IgnoreOBD2;
+                // Save this if need be
+            }
         }
 
-    #endregion
+        #endregion
 
     #region Truck Data Processing
 
@@ -502,75 +512,75 @@ namespace Demo
             switch (GroupNo)
             {
                 case 0:
-                    Pids = new JPIDs[7];
-                    Pids[0] = JPIDs.RPM;
-                    Pids[1] = JPIDs.Speed;
-                    Pids[2] = JPIDs.AccPedPos;
-                    Pids[3] = JPIDs.PctLoad;
-                    Pids[4] = JPIDs.PctTorque;
-                    Pids[5] = JPIDs.DrvPctTorque;
-                    Pids[6] = JPIDs.TorqueMode;
+                    Pids = new BFPIDs[7];
+                    Pids[0] = BFPIDs.RPM;
+                    Pids[1] = BFPIDs.Speed;
+                    Pids[2] = BFPIDs.AccPedalPos;
+                    Pids[3] = BFPIDs.PctLoad;
+                    Pids[4] = BFPIDs.PctTorque;
+                    Pids[5] = BFPIDs.DrvPctTorque;
+                    Pids[6] = BFPIDs.TorqueMode;
                     await BlueFire.GetPIDs(Pids);
 
                     break;
 
                 case 1:
-                    Pids = new JPIDs[3];
-                    Pids[0] = JPIDs.Odometer;
-                    Pids[1] = JPIDs.Distance;
-                    Pids[2] = JPIDs.HiResDistance;
+                    Pids = new BFPIDs[3];
+                    Pids[0] = BFPIDs.Odometer;
+                    Pids[1] = BFPIDs.Distance;
+                    Pids[2] = BFPIDs.HiResDistance;
                     await BlueFire.GetPIDs(Pids);
 
                     break;
 
                 case 2:
-                    Pids = new JPIDs[6];
-                    Pids[0] = JPIDs.TotalHours;
-                    Pids[1] = JPIDs.IdleHours;
-                    Pids[2] = JPIDs.BrakeAppPressure;
-                    Pids[3] = JPIDs.BrakeAirPressure;
-                    Pids[4] = JPIDs.Transmission2;
-                    Pids[5] = JPIDs.BatteryVoltage;
+                    Pids = new BFPIDs[6];
+                    Pids[0] = BFPIDs.TotalHours;
+                    Pids[1] = BFPIDs.IdleHours;
+                    Pids[2] = BFPIDs.BrakeAppPressure;
+                    Pids[3] = BFPIDs.BrakeAirPressure;
+                    Pids[4] = BFPIDs.Transmission2;
+                    Pids[5] = BFPIDs.BatteryVoltage;
                     await BlueFire.GetPIDs(Pids);
 
                     break;
 
                 case 3:
-                    Pids = new JPIDs[8];
-                    Pids[0] = JPIDs.FuelRate;
-                    Pids[1] = JPIDs.FuelUsed;
-                    Pids[2] = JPIDs.HiResFuelUsed;
-                    Pids[3] = JPIDs.IdleFuelUsed;
-                    Pids[4] = JPIDs.AvgFuelEcon;
-                    Pids[5] = JPIDs.InstFuelEcon;
-                    Pids[6] = JPIDs.ThrottlePos;
-                    Pids[7] = JPIDs.FuelLevel;
+                    Pids = new BFPIDs[8];
+                    Pids[0] = BFPIDs.FuelRate;
+                    Pids[1] = BFPIDs.FuelUsed;
+                    Pids[2] = BFPIDs.HiResFuelUsed;
+                    Pids[3] = BFPIDs.IdleFuelUsed;
+                    Pids[4] = BFPIDs.AvgFuelEcon;
+                    Pids[5] = BFPIDs.InstFuelEcon;
+                    Pids[6] = BFPIDs.ThrottlePos;
+                    Pids[7] = BFPIDs.FuelLevel;
                     await BlueFire.GetPIDs(Pids);
 
                     break;
 
                 case 4:
-                    Pids = new JPIDs[9];
-                    Pids[0] = JPIDs.OilTemp;
-                    Pids[1] = JPIDs.OilPressure;
-                    Pids[2] = JPIDs.IntakeTemp;
-                    Pids[3] = JPIDs.IntakePressure;
-                    Pids[4] = JPIDs.CoolantTemp;
-                    Pids[5] = JPIDs.CoolantPressure;
-                    Pids[6] = JPIDs.CoolantLevel;
-                    Pids[7] = JPIDs.TransTemp;
-                    Pids[8] = JPIDs.ExhaustTemp;
+                    Pids = new BFPIDs[9];
+                    Pids[0] = BFPIDs.OilTemp;
+                    Pids[1] = BFPIDs.OilPressure;
+                    Pids[2] = BFPIDs.IntakeTemp;
+                    Pids[3] = BFPIDs.IntakePressure;
+                    Pids[4] = BFPIDs.CoolantTemp;
+                    Pids[5] = BFPIDs.CoolantPressure;
+                    Pids[6] = BFPIDs.CoolantLevel;
+                    Pids[7] = BFPIDs.TransTemp;
+                    Pids[8] = BFPIDs.ExhaustTemp;
                     await BlueFire.GetPIDs(Pids);
 
                     break;
 
                 case 5:
-                    Pids = new JPIDs[5];
-                    Pids[0] = JPIDs.BrakeSwitch;
-                    Pids[1] = JPIDs.ClutchSwitch;
-                    Pids[2] = JPIDs.ParkingBrake;
-                    Pids[3] = JPIDs.CruiseControl;
-                    Pids[4] = JPIDs.MaxSpeed;
+                    Pids = new BFPIDs[5];
+                    Pids[0] = BFPIDs.BrakeSwitch;
+                    Pids[1] = BFPIDs.ClutchSwitch;
+                    Pids[2] = BFPIDs.ParkingBrake;
+                    Pids[3] = BFPIDs.CruiseControl;
+                    Pids[4] = BFPIDs.MaxSpeed;
                     await BlueFire.GetPIDs(Pids);
 
                     break;
@@ -638,8 +648,8 @@ namespace Demo
                     Data2Text = FormatSingle(BlueFire.Truck.IdleHours, 2);
                     Data3Text = FormatSingle(BlueFire.Truck.BrakeApplicationPressure, 2);
                     Data4Text = FormatSingle(BlueFire.Truck.Brake1AirPressure, 2);
-                    Data5Text = FormatInt32(BlueFire.Truck.TransCurrentGear);
-                    Data6Text = FormatInt32(BlueFire.Truck.TransSelectedGear);
+                    Data5Text = BlueFire.Truck.TransCurrentGear;
+                    Data6Text = BlueFire.Truck.TransSelectedGear;
                     Data7Text = FormatSingle(BlueFire.Truck.BatteryPotential, 2);
                     break;
 

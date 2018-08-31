@@ -44,12 +44,12 @@ namespace Demo.UWP
             LeavingBackground += OnLeavingBackground;
 
             // Ensure general app exceptions are handled
-            this.UnhandledException += HandleUnCaughtException;
+            AppDomain.CurrentDomain.UnhandledException += HandleUnCaughtException;
         }
 
-        private void HandleUnCaughtException(object sender, UnhandledExceptionEventArgs args)
+        private void HandleUnCaughtException(object sender, System.UnhandledExceptionEventArgs args)
         {
-            args.Handled = true;
+            //args.Handled = true;
         }
 
         /// <summary>

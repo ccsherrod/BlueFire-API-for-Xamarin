@@ -23,19 +23,24 @@
                 <!-- Adapter -->
                 <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
                     <Label Text="Adapter" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
-                    <Label Text="BT2.1" FontSize="Medium" TextColor="Blue" />
-                    <Switch x:Name="BT2Switch" />
                     <Label Text="BLE" FontSize="Medium" TextColor="Blue" />
-                    <Switch x:Name="BLESwitch" />
+                    <Switch x:Name="BLESwitch" Toggled="BLESwitch_Toggled" />
+                    <Label Text="BT2.1" FontSize="Medium" TextColor="Blue" />
+                    <Switch x:Name="BT2Switch" Toggled="BT2Switch_Toggled" />
                 </StackLayout>
 
                 <!-- Data Bus -->
                 <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
                     <Label Text="Data Bus" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
                     <Label Text="J1939" FontSize="Medium" TextColor="Blue" />
-                    <Switch x:Name="J1939Switch" />
+                    <Switch x:Name="J1939Switch" Toggled="J1939Switch_Toggled" />
                     <Label Text="J1708" FontSize="Medium" TextColor="Blue" />
-                    <Switch x:Name="J1708Switch" />
+                    <Switch x:Name="J1708Switch" Toggled="J1708Switch_Toggled" />
+                </StackLayout>
+                <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                    <Label Text="" FontSize="Medium" TextColor="Blue" WidthRequest="100" />
+                    <Label Text="OBD2" FontSize="Medium" TextColor="Blue" />
+                    <Switch x:Name="OBD2Switch" Toggled="OBD2Switch_Toggled" />
                 </StackLayout>
 
                 <!-- Status -->
@@ -47,8 +52,26 @@
                 <!-- Connect Button -->
                 <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
                     <Button x:Name="ConnectButton" Text="Connect" FontSize="Medium" TextColor="Black" BackgroundColor="#CCCCCC" Clicked="ConnectButton_Clicked" />
-                    <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,10,0,0" >
-                        <Label x:Name="KeyStateText" Text="Key Off" FontSize="Medium" TextColor="Green" />
+                    <StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,0,0,0" >
+                            <StackLayout Orientation="Horizontal" >
+                                <Label Text="FW: " FontSize="Medium" TextColor="Blue" />
+                                <Label x:Name="FirmwareText" Text="" FontSize="Medium" TextColor="Green" />
+                            </StackLayout>
+                            <StackLayout Orientation="Horizontal" Padding="10,0,0,0" >
+                                <Label Text="Heartbeat: " FontSize="Medium" TextColor="Blue" />
+                                <Label x:Name="HeartbeatText" Text="0" FontSize="Medium" TextColor="Green" />
+                            </StackLayout>
+                        </StackLayout>
+                        <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-5,0,0" >
+                            <StackLayout Orientation="Horizontal" >
+                                <Label Text="HW: " FontSize="Medium" TextColor="Blue" />
+                                <Label x:Name="HardwareText" Text="" FontSize="Medium" TextColor="Green" />
+                            </StackLayout>
+                            <StackLayout Orientation="Horizontal" Padding="10,0,0,0" >
+                                <Label x:Name="KeyStateText" Text="Key Off" FontSize="Medium" TextColor="Green" />
+                            </StackLayout>
+                        </StackLayout>
                     </StackLayout>
                 </StackLayout>
 
@@ -85,20 +108,26 @@
                         <Label Text="Adapter Settings" FontSize="Medium" FontAttributes="Bold" TextColor="Orange" />
                     </StackLayout>
 
-                    <!-- Connect to Last Adapter -->
-                    <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
-                        <Label Text="Connect to Last Adapter" FontSize="Medium" TextColor="Blue" WidthRequest="260" />
-                        <Switch x:Name="ConnectLastAdapterSwitch" />
-                    </StackLayout>
-
-                    <BoxView HeightRequest="2" Color="#FF909090" />
-
                     <!-- Led Brightness -->
                     <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,5,0,0" >
                         <Label x:Name="LedBrightnessLabel" Text="Led Brightness:" FontSize="Medium" TextColor="Blue" WidthRequest="130" />
                         <StackLayout x:Name="LedBrightnessLayout" Orientation="Horizontal" HorizontalOptions="FillAndExpand" Padding="0,-10,0,0" >
-                            <Entry x:Name="LedBrightnessEntry" FontSize="Medium" TextColor="Green" WidthRequest="60" />
+                            <Entry x:Name="LedBrightnessEntry" FontSize="Medium" TextColor="Green" WidthRequest="60" Completed="LedBrightness_Completed" />
                         </StackLayout>
+                    </StackLayout>
+
+                    <!-- Send All Packets -->
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
+                        <Label Text="Send All Packets" FontSize="Medium" TextColor="Blue" WidthRequest="200" />
+                        <Switch x:Name="SendAllPacketsSwitch" />
+                    </StackLayout>
+
+                    <BoxView HeightRequest="2" Color="#FF909090" />
+
+                    <!-- Connect to Last Adapter -->
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand" >
+                        <Label Text="Connect to Last Adapter" FontSize="Medium" TextColor="Blue" WidthRequest="260" />
+                        <Switch x:Name="ConnectLastAdapterSwitch" />
                     </StackLayout>
 
                     <!-- Secure Device -->
@@ -408,7 +437,7 @@
             </StackLayout>
 
         </ScrollView>
-        
+
     </StackLayout>
 
 </ContentPage>

@@ -9,7 +9,7 @@ using Xamarin.Forms.Xaml;
 [assembly: AssemblyTrademark("BlueFire")]
 [assembly: AssemblyCompany("BlueFire LLC")]
 [assembly: AssemblyProduct("BlueFire API Demo")] // this is used for the app folder name
-[assembly: AssemblyDescription("BlueFire API Demo Application")]
+[assembly: AssemblyDescription("BlueFire API Demo for iOS")]
 [assembly: AssemblyCopyright("Copyright © BlueFire LLC 2014. All rights reserved")]
 
 [assembly: AssemblyTitle("BlueFire API Demo")] // this needs to match the iOS version
@@ -18,4 +18,4 @@ using Xamarin.Forms.Xaml;
 [assembly: AssemblyConfiguration("")]
 
 //[assembly: AssemblyVersion("0.0.0")] // must use AssemblyFileVersion for compatibility with Windows UWP
-[assembly: AssemblyFileVersion("3.4.0")] // this needs to match the versionName in the Manifest and the iOS version
+[assembly: AssemblyFileVersion("3.5.0")] // this needs to match the versionName in the Manifest and the iOS version

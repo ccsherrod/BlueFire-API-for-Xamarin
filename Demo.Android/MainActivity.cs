@@ -8,17 +8,15 @@ using Android.Widget;
 using Android.OS;
 
 using BlueFire;
+using Plugin.Permissions;
 
 namespace Demo.Droid
 {
-    [Activity(MainLauncher = true, Theme = "@style/MainTheme", ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
-    public class MainActivity : global::Xamarin.Forms.Platform.Android.FormsAppCompatActivity
-	{
-		protected override void OnCreate (Bundle bundle)
+    [Activity(MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
+    public class MainActivity : global::Xamarin.Forms.Platform.Android.FormsApplicationActivity
+    {
+        protected override void OnCreate (Bundle bundle)
 		{
-            TabLayoutResource = Resource.Layout.Tabbar;
-            ToolbarResource = Resource.Layout.Toolbar;
-
             base.OnCreate (bundle);
 
             // ****************************************************************************
@@ -27,13 +25,21 @@ namespace Demo.Droid
             // Also, ensure that the Demo.Android project properties Android Options/Linker 
             // Additional supported encodings West is checked.
             //
-            API.Context = this.ApplicationContext;
-
+            API.Activity = this;
+            //
             // ****************************************************************************
+
+            Plugin.CurrentActivity.CrossCurrentActivity.Current.Init(this, bundle);
 
             global::Xamarin.Forms.Forms.Init (this, bundle);
 			LoadApplication (new Demo.App ());
 		}
+
+        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Android.Content.PM.Permission[] grantResults)
+        {
+            PermissionsImplementation.Current.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+            base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
 
         protected override void OnStart()
         {

@@ -176,3 +176,12 @@ Version 3.4:<ul>
 	<li>Updated with the latest BlueFire 4.12 core libraries.
 	<li>Updated to the latest NuGet packages and Xamarin Forms (2.5.0.122203).
 </ul>
+
+Version 3.5:<ul>
+	<li>Removed reference to ArrayList.
+	<li>Improved the BLE connection. 
+	<li>Added checking for Storage and Location permissions to Demo App's InitializeApp routine.
+	<li>Updated with the latest Xamarin and NuGet libraries.
+	<li>Updated with the latest BlueFire 5.0 core libraries.
+</ul>
+

@@ -2,8 +2,11 @@
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 using Xamarin.Forms;
+
+using Plugin.Permissions.Abstractions;
 
 using BlueFire;
 
@@ -19,7 +22,7 @@ namespace Demo
         private Int32 GroupNo;
         private const Int32 MaxGroupNo = 8;
 
-        private JPIDs[] Pids; // for sending J1939/J1587 Pids to the adapter
+        private BFPIDs[] Pids; // for sending J1939/J1587 Pids to the adapter
 
         private Int32 RetrievalInterval;
         private RequestTypes RequestType; 
@@ -30,6 +33,8 @@ namespace Demo
         private Boolean IsConnecting;
         private Boolean IsConnectButton;
 
+        private Int32 Heartbeat;
+
         private Int32 PGN;
         private Boolean IsSendingPGN;
         private Boolean IsMonitoringPGN;
@@ -39,6 +44,7 @@ namespace Demo
 
         private Boolean IgnoreJ1939 = false;
         private Boolean IgnoreJ1708 = false;
+        private Boolean IgnoreOBD2 = false;
 
         private String ErrorMessage = "";
         private Exception ErrorException = null;
@@ -99,8 +105,12 @@ namespace Demo
 
             Title.Text = "API Demo v-" + BlueFire.GetAPIVersion();
 
-            Initialize();
+            InitializeApp();
         }
+
+    #endregion
+
+    #region Initialize Controls
 
         private void InitializeControls()
         {
@@ -159,7 +169,11 @@ namespace Demo
             StopServiceButton.IsEnabled = false;
         }
 
-        private async void Initialize()
+    #endregion
+
+    #region Initialize App
+
+        private async void InitializeApp()
         {
             // Connect button
             IsConnectButton = true;
@@ -172,11 +186,19 @@ namespace Demo
 
             ShowStatus(ConnectionStates.NotConnected.ToString());
 
-            // Initialize BlueFire API
-            await BlueFire.Initialize();
-
             // Set to kill app on exiting
             BlueFire.KillAppService = true;
+
+            // Check permissions.
+            // Note, this must be before BlueFire.Initialize.
+            if (!await CheckPermissions())
+            {
+                EndApplication(); // you may or may not want to do this
+                return;
+            }
+
+            // Initialize BlueFire API
+            await BlueFire.Initialize();
 
             // Clear adapter id filter
             BlueFire.DeviceAddressFilter.Clear();
@@ -198,12 +220,16 @@ namespace Demo
             J1939Switch.IsToggled = !BlueFire.IgnoreJ1939;
             J1708Switch.IsToggled = !BlueFire.IgnoreJ1708;
 
+            ConnectLastAdapterSwitch.IsEnabled = true;
+
             // Security settings
+            SecureDeviceSwitch.IsEnabled = true;
+            SecureAdapterSwitch.IsEnabled = true;
+
             UserNameEntry.Text = "";
             PasswordEntry.Text = "";
 
-            SecureDeviceSwitch.IsEnabled = false;
-            SecureAdapterSwitch.IsEnabled = false;
+            UpdateButton.IsEnabled = true;
 
             // Proprietary PGNs
             PGNEntry.Text = "";
@@ -211,8 +237,6 @@ namespace Demo
 
             NextButton.IsVisible = false;
             PrevButton.IsVisible = false;
-
-            UpdateButton.IsEnabled = false;
             SendButton.IsEnabled = false;
 
             // ELD settings
@@ -244,15 +268,49 @@ namespace Demo
 
     #endregion
 
+    #region Check Permissions
+
+        private async Task<Boolean> CheckPermissions()
+        {
+            // Check storage permission
+            if (!await BlueFire.CheckPermission(Permission.Storage, false))
+            {
+                // Note, an alert to the user explaining why this is needed should be issued here.
+                //if (!await ShowAlert("Storage Permission", "My app needs the following permissions to save and access settings and files.", "Cancel"))
+                //    return false;
+
+                if (!await BlueFire.CheckPermission(Permission.Storage))
+                {
+                    ShowMessages("You must allow Storage permissions to save and access settings and files.");
+                    return false;
+                }
+            }
+
+#if (__ANDROID__) // for BLE
+            // Check location permission (BLE (just Android) and GPS (if your App is using GPS)).
+            if (!await BlueFire.CheckPermission(Permission.Location, false))
+            {
+                // Note, an alert to the user explaining why this is needed should be issued here.
+                //if (!await ShowAlert("Location Permission", "My app needs the following permissions for the Bluetooth connection.", "Cancel"))
+                //    return false;
+
+                if (!await BlueFire.CheckPermission(Permission.Location))
+                {
+                    ShowMessages("You must allow Location access for the Bluetooth connection.");
+                    return false;
+                }
+            }
+#endif
+            return true;
+        }
+
+    #endregion
+
     #region Page Events
 
         protected override void OnAppearing()
         {
             base.OnAppearing();
-
-            // Get truck data if key is on when app is connecting
-            if (BlueFire.Truck.IsKeyOn)
-                GetTruckData();
         }
 
         protected override void OnDisappearing()
@@ -279,12 +337,7 @@ namespace Demo
             // Remove all pages from the stack so the app can end
             while (Navigation.NavigationStack.Count > 1)
                 Navigation.RemovePage(Navigation.NavigationStack[0]);
-#if (WINDOWS_UWP)
-            // Windows Mobile does not raise the suspend event which raises the app terminate event
-            // so we have to set to kill the app here.
-            if (BlueFire.IsDeviceMobile)
-                BlueFire.KillAppService = true;
-#endif
+
             // End the application.
             // Note, this will save the settings.
             EndApplication();
@@ -443,8 +496,8 @@ namespace Demo
                     ShowStatus(State.ToString());
                     break;
 
-                case ConnectionStates.J1939Starting:
-                    ShowMessages("J1939 is starting, CAN bus speed is " + BlueFire.CanBusSpeedToString() + ".");
+                case ConnectionStates.CANStarting:
+                    ShowMessages("The Adapter is connected to the " + BlueFire.CanBusToString() + ".");
                     await GetTruckData();
                     ShowData();
                     break;
@@ -453,6 +506,10 @@ namespace Demo
                     ShowMessages("J1708 is restarting.");
                     await GetTruckData();
                     ShowData();
+                    break;
+
+                case ConnectionStates.Heartbeat:
+                    ShowHeartbeat();
                     break;
 
                 case ConnectionStates.DataAvailable:
@@ -534,13 +591,24 @@ namespace Demo
             }
         }
 
-    #endregion
+        #endregion
 
     #region Show Status
 
         private void ShowStatus(String Status)
         {
             StatusText.Text = Status;
+        }
+
+    #endregion
+
+    #region Show Heartbeat
+
+        private void ShowHeartbeat()
+        {
+            Heartbeat++;
+
+            HeartbeatText.Text = Heartbeat.ToString();
         }
 
     #endregion
@@ -588,10 +656,11 @@ namespace Demo
 
             ClearMessages();
 
+            ConnectLastAdapterSwitch.IsEnabled = false;
             SecureDeviceSwitch.IsEnabled = false;
-            SecureAdapterSwitch.IsEnabled = true;
+            SecureAdapterSwitch.IsEnabled = false;
+            UpdateButton.IsEnabled = false;
 
-            UpdateButton.IsEnabled = true;
             SendButton.IsEnabled = true;
 
             ConnectButton.Focus();
@@ -599,6 +668,9 @@ namespace Demo
             // Check for API setting the adapter type
             BT2Switch.IsToggled = BlueFire.UseBT2;
             BLESwitch.IsToggled = BlueFire.UseBLE;
+
+            HardwareText.Text = BlueFire.HardwareVersion;
+            FirmwareText.Text = BlueFire.FirmwareVersion;
 
             // Test adapter id filter.
             // Note, this will allow the intial connection to a single adapter
@@ -635,10 +707,11 @@ namespace Demo
             J1939Switch.IsEnabled = true;
             J1708Switch.IsEnabled = true;
 
-            SecureDeviceSwitch.IsEnabled = false;
-            SecureAdapterSwitch.IsEnabled = false;
+            ConnectLastAdapterSwitch.IsEnabled = true;
+            SecureDeviceSwitch.IsEnabled = true;
+            SecureAdapterSwitch.IsEnabled = true;
+            UpdateButton.IsEnabled = true;
 
-            UpdateButton.IsEnabled = false;
             SendButton.IsEnabled = false;
 
             ConnectButton.Focus();
@@ -651,10 +724,11 @@ namespace Demo
             IsConnected = false;
             IsConnecting = true;
 
+            ConnectLastAdapterSwitch.IsEnabled = false;
             SecureDeviceSwitch.IsEnabled = false;
             SecureAdapterSwitch.IsEnabled = false;
-
             UpdateButton.IsEnabled = false;
+
             SendButton.IsEnabled = false;
 
             WriteLog("App reconnecting to the Adapter. Reason is " + BlueFire.ReconnectReason + ".");
@@ -695,6 +769,12 @@ namespace Demo
             {
                 IgnoreJ1708 = BlueFire.IgnoreJ1708;
                 J1708Switch.IsToggled = !IgnoreJ1708; // switch is opposite
+            }
+
+            if (IgnoreOBD2 != BlueFire.IgnoreOBD2)
+            {
+                IgnoreOBD2 = BlueFire.IgnoreOBD2;
+                OBD2Switch.IsToggled = !IgnoreOBD2; // switch is opposite
             }
 
             // Show adapter data
@@ -754,10 +834,11 @@ namespace Demo
             StartServiceButton.IsEnabled = false;
             StopServiceButton.IsEnabled = false;
 
+            ConnectLastAdapterSwitch.IsEnabled = false;
             SecureDeviceSwitch.IsEnabled = false;
             SecureAdapterSwitch.IsEnabled = false;
-
             UpdateButton.IsEnabled = false;
+
             SendButton.IsEnabled = false;
 
             // Check for connecting
@@ -765,6 +846,9 @@ namespace Demo
             {
                 IsConnecting = true;
                 IsConnected = false;
+
+                Heartbeat = 0;
+                ShowHeartbeat();
 
                 ShowStatus("Connecting...");
 
@@ -777,8 +861,11 @@ namespace Demo
 
                 BlueFire.IgnoreJ1939 = !J1939Switch.IsToggled; // is opposite
                 BlueFire.IgnoreJ1708 = !J1708Switch.IsToggled; // is opposite
+                BlueFire.IgnoreOBD2 = !OBD2Switch.IsToggled; // is opposite
 
                 BlueFire.ConnectLastAdapter = ConnectLastAdapterSwitch.IsToggled;
+
+                BlueFire.SendAllPackets = SendAllPacketsSwitch.IsToggled;
 
                 BlueFire.IsNotificationsOn = false;
                 BlueFire.IsPerformanceModeOn = false;
@@ -877,7 +964,7 @@ namespace Demo
             IsServiceRunning = false;
 
             // Re-initialze for app processing
-            Initialize();
+            InitializeApp();
 
             StartServiceButton.IsEnabled = true;
 
@@ -896,17 +983,7 @@ namespace Demo
         // Adapter settings
         private void UpdateButton_Clicked(object sender, EventArgs e)
         {
-            // LED Brightness
-            Byte LedBrightness;
-
             ClearMessages();
-
-            if (!Byte.TryParse(LedBrightnessEntry.Text, out LedBrightness) || LedBrightness < 5 || LedBrightness > 100)
-            {
-                ShowMessages("Invalid LED Brightness");
-                return;
-            }
-            BlueFire.LedBrightness = LedBrightness;
 
             // Security
             Boolean SecureDevice = SecureDeviceSwitch.IsEnabled;
@@ -1143,14 +1220,14 @@ namespace Demo
 
                     if (!IsStressTesting)
                     {
-                        Pids = new JPIDs[7];
-                        Pids[0] = JPIDs.RPM;
-                        Pids[1] = JPIDs.Speed;
-                        Pids[2] = JPIDs.AccPedPos;
-                        Pids[3] = JPIDs.PctLoad;
-                        Pids[4] = JPIDs.PctTorque;
-                        Pids[5] = JPIDs.DrvPctTorque;
-                        Pids[6] = JPIDs.TorqueMode;
+                        Pids = new BFPIDs[7];
+                        Pids[0] = BFPIDs.RPM;
+                        Pids[1] = BFPIDs.Speed;
+                        Pids[2] = BFPIDs.AccPedalPos;
+                        Pids[3] = BFPIDs.PctLoad;
+                        Pids[4] = BFPIDs.PctTorque;
+                        Pids[5] = BFPIDs.DrvPctTorque;
+                        Pids[6] = BFPIDs.TorqueMode;
                         await BlueFire.GetPIDs(Pids);
                     }
 
@@ -1173,10 +1250,10 @@ namespace Demo
 
                     if (!IsStressTesting)
                     {
-                        Pids = new JPIDs[3];
-                        Pids[0] = JPIDs.Odometer;
-                        Pids[1] = JPIDs.Distance;
-                        Pids[2] = JPIDs.HiResDistance;
+                        Pids = new BFPIDs[3];
+                        Pids[0] = BFPIDs.Odometer;
+                        Pids[1] = BFPIDs.Distance;
+                        Pids[2] = BFPIDs.HiResDistance;
                         await BlueFire.GetPIDs(Pids);
                     }
 
@@ -1199,13 +1276,13 @@ namespace Demo
 
                     if (!IsStressTesting)
                     {
-                        Pids = new JPIDs[6];
-                        Pids[0] = JPIDs.TotalHours;
-                        Pids[1] = JPIDs.IdleHours;
-                        Pids[2] = JPIDs.BrakeAppPressure;
-                        Pids[3] = JPIDs.BrakeAirPressure;
-                        Pids[4] = JPIDs.Transmission2;
-                        Pids[5] = JPIDs.BatteryVoltage;
+                        Pids = new BFPIDs[6];
+                        Pids[0] = BFPIDs.TotalHours;
+                        Pids[1] = BFPIDs.IdleHours;
+                        Pids[2] = BFPIDs.BrakeAppPressure;
+                        Pids[3] = BFPIDs.BrakeAirPressure;
+                        Pids[4] = BFPIDs.Transmission2;
+                        Pids[5] = BFPIDs.BatteryVoltage;
                         await BlueFire.GetPIDs(Pids);
                     }
 
@@ -1228,14 +1305,14 @@ namespace Demo
 
                     if (!IsStressTesting)
                     {
-                        Pids = new JPIDs[7];
-                        Pids[0] = JPIDs.FuelRate;
-                        Pids[1] = JPIDs.FuelUsed;
-                        Pids[2] = JPIDs.HiResFuelUsed;
-                        Pids[3] = JPIDs.IdleFuelUsed;
-                        Pids[4] = JPIDs.AvgFuelEcon;
-                        Pids[5] = JPIDs.InstFuelEcon;
-                        Pids[6] = JPIDs.ThrottlePos;
+                        Pids = new BFPIDs[7];
+                        Pids[0] = BFPIDs.FuelRate;
+                        Pids[1] = BFPIDs.FuelUsed;
+                        Pids[2] = BFPIDs.HiResFuelUsed;
+                        Pids[3] = BFPIDs.IdleFuelUsed;
+                        Pids[4] = BFPIDs.AvgFuelEcon;
+                        Pids[5] = BFPIDs.InstFuelEcon;
+                        Pids[6] = BFPIDs.ThrottlePos;
                         await BlueFire.GetPIDs(Pids);
                     }
 
@@ -1258,14 +1335,14 @@ namespace Demo
 
                     if (!IsStressTesting)
                     {
-                        Pids = new JPIDs[7];
-                        Pids[0] = JPIDs.OilTemp;
-                        Pids[1] = JPIDs.OilPressure;
-                        Pids[2] = JPIDs.IntakeTemp;
-                        Pids[3] = JPIDs.IntakePressure;
-                        Pids[4] = JPIDs.CoolantTemp;
-                        Pids[5] = JPIDs.CoolantPressure;
-                        Pids[6] = JPIDs.CoolantLevel;
+                        Pids = new BFPIDs[7];
+                        Pids[0] = BFPIDs.OilTemp;
+                        Pids[1] = BFPIDs.OilPressure;
+                        Pids[2] = BFPIDs.IntakeTemp;
+                        Pids[3] = BFPIDs.IntakePressure;
+                        Pids[4] = BFPIDs.CoolantTemp;
+                        Pids[5] = BFPIDs.CoolantPressure;
+                        Pids[6] = BFPIDs.CoolantLevel;
                         await BlueFire.GetPIDs(Pids);
                     }
 
@@ -1294,12 +1371,12 @@ namespace Demo
                     }
                     else
                     {
-                        Pids = new JPIDs[5];
-                        Pids[0] = JPIDs.BrakeSwitch;
-                        Pids[1] = JPIDs.ClutchSwitch;
-                        Pids[2] = JPIDs.ParkingBrake;
-                        Pids[3] = JPIDs.CruiseControl;
-                        Pids[4] = JPIDs.MaxSpeed;
+                        Pids = new BFPIDs[5];
+                        Pids[0] = BFPIDs.BrakeSwitch;
+                        Pids[1] = BFPIDs.ClutchSwitch;
+                        Pids[2] = BFPIDs.ParkingBrake;
+                        Pids[3] = BFPIDs.CruiseControl;
+                        Pids[4] = BFPIDs.MaxSpeed;
                         await BlueFire.GetPIDs(Pids);
                     }
 
@@ -1323,14 +1400,14 @@ namespace Demo
                     if (!IsStressTesting)
                     {
                         // Set RPM and Speed to always return data on a one second interval
-                        await BlueFire.GetPID(JPIDs.RPM, Const.OneSecond, RequestTypes.OnInterval);
-                        await BlueFire.GetPID(JPIDs.Speed, Const.OneSecond, RequestTypes.OnInterval);
+                        await BlueFire.GetPID(BFPIDs.RPM, Const.OneSecond, RequestTypes.OnInterval);
+                        await BlueFire.GetPID(BFPIDs.Speed, Const.OneSecond, RequestTypes.OnInterval);
 
                         // Set Distance and hours to return only on change at longer intervals.
                         // Note, odometer is the same as distance just from a different source (OEM ECM).
-                        await BlueFire.GetPID(JPIDs.Distance, 5 * Const.OneSecond, RequestTypes.OnChange);
-                        await BlueFire.GetPID(JPIDs.HiResDistance, 5 * Const.OneSecond, RequestTypes.OnChange);
-                        await BlueFire.GetPID(JPIDs.TotalHours, 10 * Const.OneSecond, RequestTypes.OnChange);
+                        await BlueFire.GetPID(BFPIDs.Distance, 5 * Const.OneSecond, RequestTypes.OnChange);
+                        await BlueFire.GetPID(BFPIDs.HiResDistance, 5 * Const.OneSecond, RequestTypes.OnChange);
+                        await BlueFire.GetPID(BFPIDs.TotalHours, 10 * Const.OneSecond, RequestTypes.OnChange);
                     }
 
                     break;
@@ -1428,8 +1505,8 @@ namespace Demo
                     DataView2.Text = FormatSingle(BlueFire.Truck.IdleHours, 2);
                     DataView3.Text = FormatSingle(BlueFire.Truck.BrakeApplicationPressure, 2);
                     DataView4.Text = FormatSingle(BlueFire.Truck.Brake1AirPressure, 2);
-                    DataView5.Text = FormatInt32(BlueFire.Truck.TransCurrentGear);
-                    DataView6.Text = FormatInt32(BlueFire.Truck.TransSelectedGear);
+                    DataView5.Text = BlueFire.Truck.TransCurrentGear;
+                    DataView6.Text = BlueFire.Truck.TransSelectedGear;
                     DataView7.Text = FormatSingle(BlueFire.Truck.BatteryPotential, 2);
                     break;
 
@@ -1592,57 +1669,57 @@ namespace Demo
 
             // Start monitoring all other truck data
 
-            Pids = new JPIDs[7];
-            Pids[0] = JPIDs.RPM;
-            Pids[1] = JPIDs.Speed;
-            Pids[2] = JPIDs.AccPedPos;
-            Pids[3] = JPIDs.PctLoad;
-            Pids[4] = JPIDs.PctTorque;
-            Pids[5] = JPIDs.DrvPctTorque;
-            Pids[6] = JPIDs.TorqueMode;
+            Pids = new BFPIDs[7];
+            Pids[0] = BFPIDs.RPM;
+            Pids[1] = BFPIDs.Speed;
+            Pids[2] = BFPIDs.AccPedalPos;
+            Pids[3] = BFPIDs.PctLoad;
+            Pids[4] = BFPIDs.PctTorque;
+            Pids[5] = BFPIDs.DrvPctTorque;
+            Pids[6] = BFPIDs.TorqueMode;
             await BlueFire.GetPIDs(Pids);
 
-            Pids = new JPIDs[3];
-            Pids[0] = JPIDs.Odometer;
-            Pids[1] = JPIDs.Distance;
-            Pids[2] = JPIDs.HiResDistance;
+            Pids = new BFPIDs[3];
+            Pids[0] = BFPIDs.Odometer;
+            Pids[1] = BFPIDs.Distance;
+            Pids[2] = BFPIDs.HiResDistance;
             await BlueFire.GetPIDs(Pids);
 
-            Pids = new JPIDs[6];
-            Pids[0] = JPIDs.TotalHours;
-            Pids[1] = JPIDs.IdleHours;
-            Pids[2] = JPIDs.BrakeAppPressure;
-            Pids[3] = JPIDs.BrakeAirPressure;
-            Pids[4] = JPIDs.Transmission2;
-            Pids[5] = JPIDs.BatteryVoltage;
+            Pids = new BFPIDs[6];
+            Pids[0] = BFPIDs.TotalHours;
+            Pids[1] = BFPIDs.IdleHours;
+            Pids[2] = BFPIDs.BrakeAppPressure;
+            Pids[3] = BFPIDs.BrakeAirPressure;
+            Pids[4] = BFPIDs.Transmission2;
+            Pids[5] = BFPIDs.BatteryVoltage;
             await BlueFire.GetPIDs(Pids);
 
-            Pids = new JPIDs[7];
-            Pids[0] = JPIDs.FuelRate;
-            Pids[1] = JPIDs.FuelUsed;
-            Pids[2] = JPIDs.HiResFuelUsed;
-            Pids[3] = JPIDs.IdleFuelUsed;
-            Pids[4] = JPIDs.AvgFuelEcon;
-            Pids[5] = JPIDs.InstFuelEcon;
-            Pids[6] = JPIDs.ThrottlePos;
+            Pids = new BFPIDs[7];
+            Pids[0] = BFPIDs.FuelRate;
+            Pids[1] = BFPIDs.FuelUsed;
+            Pids[2] = BFPIDs.HiResFuelUsed;
+            Pids[3] = BFPIDs.IdleFuelUsed;
+            Pids[4] = BFPIDs.AvgFuelEcon;
+            Pids[5] = BFPIDs.InstFuelEcon;
+            Pids[6] = BFPIDs.ThrottlePos;
             await BlueFire.GetPIDs(Pids);
 
-            Pids = new JPIDs[7];
-            Pids[0] = JPIDs.OilTemp;
-            Pids[1] = JPIDs.OilPressure;
-            Pids[2] = JPIDs.IntakeTemp;
-            Pids[3] = JPIDs.IntakePressure;
-            Pids[4] = JPIDs.CoolantTemp;
-            Pids[5] = JPIDs.CoolantPressure;
-            Pids[6] = JPIDs.CoolantLevel;
+            Pids = new BFPIDs[7];
+            Pids[0] = BFPIDs.OilTemp;
+            Pids[1] = BFPIDs.OilPressure;
+            Pids[2] = BFPIDs.IntakeTemp;
+            Pids[3] = BFPIDs.IntakePressure;
+            Pids[4] = BFPIDs.CoolantTemp;
+            Pids[5] = BFPIDs.CoolantPressure;
+            Pids[6] = BFPIDs.CoolantLevel;
             await BlueFire.GetPIDs(Pids);
 
-            Pids = new JPIDs[5];
-            Pids[0] = JPIDs.BrakeSwitch;
-            Pids[1] = JPIDs.ClutchSwitch;
-            Pids[2] = JPIDs.ParkingBrake;
-            Pids[3] = JPIDs.CruiseControl;
-            Pids[4] = JPIDs.MaxSpeed;
+            Pids = new BFPIDs[5];
+            Pids[0] = BFPIDs.BrakeSwitch;
+            Pids[1] = BFPIDs.ClutchSwitch;
+            Pids[2] = BFPIDs.ParkingBrake;
+            Pids[3] = BFPIDs.CruiseControl;
+            Pids[4] = BFPIDs.MaxSpeed;
             await BlueFire.GetPIDs(Pids);
         }
 
@@ -2597,6 +2674,103 @@ namespace Demo
 
         #endregion
 
+        #endregion
+
+    #region Switches
+
+        // BLE Switch
+        private void BLESwitch_Toggled(object sender, EventArgs e)
+        {
+            // Update API
+            BlueFire.UseBLE = BLESwitch.IsToggled;
+        }
+
+        // BT2 Switch
+        private void BT2Switch_Toggled(object sender, EventArgs e)
+        {
+            // Update API
+            BlueFire.UseBT2 = BT2Switch.IsToggled;
+        }
+
+        // J1939 Switch
+        private void J1939Switch_Toggled(object sender, EventArgs e)
+        {
+            if (IsTogglingOBD2)
+                return;
+
+            J1708Switch.IsToggled = !J1939Switch.IsToggled;
+
+            OBD2Switch.IsToggled = false;
+
+            // Update API
+            BlueFire.IgnoreJ1939 = !J1939Switch.IsToggled; // opposite
+            BlueFire.IgnoreJ1708 = !J1708Switch.IsToggled; // opposite
+            BlueFire.IgnoreOBD2 = !OBD2Switch.IsToggled; // opposite
+        }
+
+        // J1708 Switch
+        private void J1708Switch_Toggled(object sender, EventArgs e)
+        {
+            if (IsTogglingOBD2)
+                return;
+
+            J1939Switch.IsToggled = !J1708Switch.IsToggled;
+
+            OBD2Switch.IsToggled = false;
+
+            // Update API
+            BlueFire.IgnoreJ1939 = !J1939Switch.IsToggled; // opposite
+            BlueFire.IgnoreJ1708 = !J1708Switch.IsToggled; // opposite
+            BlueFire.IgnoreOBD2 = !OBD2Switch.IsToggled; // opposite
+        }
+
+        private Boolean IsTogglingOBD2;
+
+        // OBD2 Switch
+        private void OBD2Switch_Toggled(object sender, EventArgs e)
+        {
+            IsTogglingOBD2 = true;
+
+            if (OBD2Switch.IsToggled)
+            {
+                J1939Switch.IsToggled = false;
+                J1708Switch.IsToggled = false;
+            }
+            else
+            {
+                J1939Switch.IsToggled = true;
+                J1708Switch.IsToggled = false;
+            }
+
+            IsTogglingOBD2 = false;
+
+            // Update API
+            BlueFire.IgnoreJ1939 = !J1939Switch.IsToggled; // opposite
+            BlueFire.IgnoreJ1708 = !J1708Switch.IsToggled; // opposite
+            BlueFire.IgnoreOBD2 = !OBD2Switch.IsToggled; // opposite
+        }
+
+    #endregion
+
+    #region LED Brightness
+
+        private void LedBrightness_Completed(object sender, EventArgs e)
+        {
+            // LED Brightness
+            Byte LedBrightness;
+
+            ClearMessages();
+
+            if (!Byte.TryParse(LedBrightnessEntry.Text, out LedBrightness) || LedBrightness < 5 || LedBrightness > 100)
+            {
+                ShowMessages("Invalid LED Brightness");
+                return;
+            }
+
+            // Update API
+            BlueFire.LedBrightness = LedBrightness;
+        }
+
     #endregion
 
     #region Log Notification
@@ -2680,15 +2854,19 @@ namespace Demo
 
         public async Task EndApplicationUI()
         {
-            if (DemoService != null)
-                await DemoService.Dispose();
+            try
+            {
+                if (DemoService != null)
+                    await DemoService.Dispose();
 
-            // Set switch settings
-            BlueFire.UseBLE = BLESwitch.IsToggled;
-            BlueFire.UseBT2 = BT2Switch.IsToggled;
+                // Set switch settings
+                BlueFire.UseBLE = BLESwitch.IsToggled;
+                BlueFire.UseBT2 = BT2Switch.IsToggled;
 
-            BlueFire.IgnoreJ1939 = !J1939Switch.IsToggled;
-            BlueFire.IgnoreJ1708 = !J1708Switch.IsToggled;
+                BlueFire.IgnoreJ1939 = !J1939Switch.IsToggled;
+                BlueFire.IgnoreJ1708 = !J1708Switch.IsToggled;
+            }
+            catch { }
 
             await BlueFire.EndAppService(); 
         }
